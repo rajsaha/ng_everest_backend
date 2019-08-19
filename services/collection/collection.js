@@ -204,14 +204,14 @@ const Collection = (() => {
                 title: data.title
             };
 
-            const response = await Collection.findOneAndUpdate(query, update).exec();
+            const response = await _Collection.updateOne(query, update).exec();
             if (response) {
                 return true;
             }
 
             return false;
         } catch (err) {
-            console.error(error);
+            console.error(err);
             return {
                 status: 500,
                 error: error.message
