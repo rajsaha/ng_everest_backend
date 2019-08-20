@@ -7,9 +7,9 @@ const ResourceEdit = require('../../../services/resource/edit');
 const checkIfAuthenticated = require('../../../services/auth/checkIfAuthorized');
 
 // * Get calls
-router.get('/get/all', checkIfAuthenticated, async (req, res, next) => {
+router.get('/get/all/:start/:end', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await ResourceGet.getAllResources();
+        const response = await ResourceGet.getAllResources(req.params.start, req.params.end);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
@@ -122,6 +122,16 @@ router.post('/edit-resource-collection', checkIfAuthenticated, async (req, res, 
 router.post('/add-comment', checkIfAuthenticated, async (req, res, next) => {
     try {
         const response = await ResourceEdit.addComment(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
+// * Search
+router.post('/search-for-user-resources', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await ResourceGet.searchUserResources(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);

@@ -3,9 +3,10 @@ const User = require('../../models/User');
 const mongoose = require('mongoose');
 
 const ResourceGet = (() => {
-    const getAllResources = async () => {
+    const getAllResources = async (start, end) => {
         try {
-            const resources = await _Resource.find().sort({timestamp: -1}).exec();
+            console.log(start, end);
+            const resources = await _Resource.find().skip(parseInt(start)).limit(parseInt(end)).sort({timestamp: -1}).exec();
             return {
                 resources: resources
             }
@@ -103,13 +104,44 @@ const ResourceGet = (() => {
         }
     }
 
+    const searchUserResources = async (data) => {
+        try {
+            let query = data.query;
+            if (query.charAt(0) === "#") {
+                // * Search for resources with tag
+                const resources = await _Resource.find(
+                    {
+                        username: data.username, 
+                        tags: {$regex: /${query}/, $options: 'i'}
+                    }).exec();
+                return {
+                    resources
+                }
+            }
+
+            const resources = await _Resource.find(
+                {
+                    username: data.username, 
+                    title: {$regex: /${query}/, $options: 'i'}
+                }).exec();
+            return {
+                resources
+            }
+        } catch (err) {
+            return {
+                error: err.message
+            }
+        }
+    }
+
     return {
         getAllResources,
         getUserResources,
         getResource,
         getMultipleResources,
         getFourImages,
-        getProfileImageByUsername
+        getProfileImageByUsername,
+        searchUserResources
     }
 })()
 
