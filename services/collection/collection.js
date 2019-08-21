@@ -177,10 +177,25 @@ const Collection = (() => {
         const response = await _Collection.updateOne({
             _id: data.collectionId
         }, {
-                $pull: {
-                    resources: data.resourceId
-                }
-            }).exec();
+            $pull: {
+                resources: data.resourceId
+            }
+        }).exec();
+        if (response) {
+            return true;
+        }
+        return false;
+    }
+
+    // * Duplicate function that uses username instead of collection Id
+    const deleteResourceFromCollection2 = async (data) => {
+        const response = await _Collection.updateOne({
+            username: data.username
+        }, {
+            $pull: {
+                resources: data.resourceId
+            }
+        }).exec();
         if (response) {
             return true;
         }
@@ -188,7 +203,9 @@ const Collection = (() => {
     }
 
     const deleteCollection = async (id) => {
-        const response = await _Collection.deleteOne({ _id: id }).exec();
+        const response = await _Collection.deleteOne({
+            _id: id
+        }).exec();
         if (response) {
             return true;
         }
@@ -229,6 +246,7 @@ const Collection = (() => {
         createCollectionAndPushResource,
         checkForResourceInAnyCollection,
         deleteResourceFromCollection,
+        deleteResourceFromCollection2,
         deleteCollection,
         changeCollectionTitle
     }
