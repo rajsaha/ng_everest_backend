@@ -108,11 +108,12 @@ const ResourceGet = (() => {
         try {
             let query = data.query;
             if (query.charAt(0) === "#") {
+                const sansHash = query.replace('#', '');
                 // * Search for resources with tag
                 const resources = await _Resource.find(
                     {
                         username: data.username, 
-                        tags: {$regex: /${query}/, $options: 'i'}
+                        tags: { $in: [sansHash] }
                     }).exec();
                 return {
                     resources
@@ -122,7 +123,7 @@ const ResourceGet = (() => {
             const resources = await _Resource.find(
                 {
                     username: data.username, 
-                    title: {$regex: /${query}/, $options: 'i'}
+                    title: {$regex: `${query}`, $options: 'i'}
                 }).exec();
             return {
                 resources
