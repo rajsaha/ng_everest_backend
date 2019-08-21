@@ -22,9 +22,11 @@ const DeleteResource = (() => {
                     }
                 }
             } else if (resource) {
-                await _Resource.findOneAndRemove({
-                    _id: data.id
-                }).exec();
+                // * Find and remove resource, clear resource id in collection if any
+                await Promise.all([
+                    findOneAndRemove(data.id),
+                    CollectionService.deleteResourceFromCollection2({username: resource.username, resourceId: data.id})
+                ]);
                 return {
                     message: {
                         error: false,
