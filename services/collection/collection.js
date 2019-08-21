@@ -236,6 +236,25 @@ const Collection = (() => {
         }
     }
 
+    const searchUserCollections = async (data) => {
+        try {
+            const collections = await _Collection.find({
+                username: data.username, 
+                title: {$regex: `${data.title}`, $options: 'i'}
+            }).exec();
+
+            return {
+                collections
+            };
+        } catch (err) {
+            console.error(err);
+            return {
+                status: 500,
+                error: error.message
+            };
+        }
+    }
+
     return {
         getCollections,
         getCollectionNames,
@@ -248,7 +267,8 @@ const Collection = (() => {
         deleteResourceFromCollection,
         deleteResourceFromCollection2,
         deleteCollection,
-        changeCollectionTitle
+        changeCollectionTitle,
+        searchUserCollections
     }
 })()
 
