@@ -1,5 +1,7 @@
 const User = require('../../models/User');
 const Resource = require('../../models/Resource');
+const ResourceService = require('../resource/get');
+const CollectionService = require('../collection/collection');
 const Imgur = require('../imgur/imgur');
 const axios = require('axios');
 const bcryptjs = require('bcryptjs');
@@ -14,6 +16,26 @@ const Profile = (() => {
             }).exec();
             return {
                 userData: user
+            }
+        } catch (err) {
+            return {
+                error: err.message
+            };
+        }
+    }
+
+    const getPublicProfile = async (username) => {
+        try {
+            const result = await Promise.all([
+                getProfileData(username), 
+                ResourceService.getUserResources(username),
+                CollectionService.getCollections(username)
+            ]);
+
+            return {
+                profileData: result[0],
+                userResources: result[1],
+                userCollections: result[2]
             }
         } catch (err) {
             return {
@@ -384,7 +406,8 @@ const Profile = (() => {
         changePassword,
         likePost,
         unlikePost,
-        checkIfPostIsLiked
+        checkIfPostIsLiked,
+        getPublicProfile
     }
 })();
 

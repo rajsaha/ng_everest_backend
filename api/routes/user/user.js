@@ -94,4 +94,13 @@ router.post('/check-if-post-liked', async (req, res, next) => {
     }
 });
 
+router.get('/get-public-profile/:username', async (req, res, next) => {
+    try {
+        const response = await User.getPublicProfile(req.params.username);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(err);
+    }
+});
+
 module.exports = router;

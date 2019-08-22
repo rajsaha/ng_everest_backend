@@ -6,7 +6,8 @@ const ResourceGet = (() => {
     const getAllResources = async (start, end) => {
         try {
             console.log(start, end);
-            const resources = await _Resource.find().skip(parseInt(start)).limit(parseInt(end)).sort({timestamp: -1}).exec();
+            // const resources = await _Resource.find().skip(parseInt(start)).limit(parseInt(end)).sort({timestamp: -1}).exec();
+            const resources = await _Resource.find().skip(parseInt(start)).sort({timestamp: -1}).exec();
             return {
                 resources: resources
             }
@@ -19,7 +20,13 @@ const ResourceGet = (() => {
 
     const getUserResources = async (username) => {
         try {
-            const resources = await _Resource.find({username}).sort({timestamp: -1}).exec();
+            const resources = await _Resource.find({username}, 
+                {
+                    comments: 0, 
+                    deleteHash: 0, 
+                    recommended_by: 0, 
+                    recommended_by_count: 0
+                }).sort({timestamp: -1}).exec();
             return {
                 resources: resources
             }
