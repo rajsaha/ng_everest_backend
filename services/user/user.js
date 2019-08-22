@@ -282,6 +282,7 @@ const Profile = (() => {
         }
     }
 
+    // * Functions related to liking and unliking posts
     const likePost = async (data) => {
         try {
             const query = {
@@ -297,9 +298,12 @@ const Profile = (() => {
                 }
             };
 
-            const response = await User.findOneAndUpdate(query, update).exec();
-            const response2 = await incrementResourceLikeCount(data.resourceId);
-            if (response && response2) {
+            const response = await Promise.all([
+                User.findOneAndUpdate(query, update).exec(),
+                incrementResourceLikeCount(data.resourceId)
+            ]);
+
+            if (response[0] && response[1]) {
                 return true;
             }
             return false;
@@ -337,15 +341,11 @@ const Profile = (() => {
 
     const unlikePost = async (data) => {
         try {
-            const response = await User.updateOne({
-                username: data.username
-            }, {
-                $pull: {
-                    recommends: data.resourceId
-                }
-            }).exec();
-            const response2 = await decrementResourceLikeCount(data.resourceId);
-            if (response && response2) {
+            const response = await Promise.all([
+                User.updateOne({username: data.username}, {$pull: {recommends: data.resourceId}}).exec(),
+                decrementResourceLikeCount(data.resourceId)
+            ]);
+            if (response[0] && response[1]) {
                 return true;
             }
             return false;
@@ -395,6 +395,130 @@ const Profile = (() => {
             };
         }
     }
+    // ! End of functions related to liking and unliking posts
+
+    // * Functions related to following and unfollowing users
+    const followUser = async (data) => {
+        try {
+            const query = {
+                username: data.currentUser
+            };
+            const update = {
+                $push: {
+                    following: data.username
+                },
+                safe: {
+                    new: true,
+                    upsert: true
+                }
+            };
+
+            const query2 = {
+                username: data.username
+            }
+
+            const update2 = {
+                $push: {
+                    followers: data.currentUser
+                },
+                safe: {
+                    new: true,
+                    upsert: true
+                }
+            }
+
+            const response = await Promise.all([
+                User.findOneAndUpdate(query, update).exec(),
+                User.findOneAndUpdate(query2, update2).exec()
+            ]);
+            
+            if (response[0] && response[1]) {
+                return true;
+            }
+            return false;
+        } catch (err) {
+            return {
+                error: err.message
+            };
+        }
+    }
+
+    const unfollowUser = async (data) => {
+        try {
+            const query = {
+                username: data.currentUser
+            };
+            const update = {
+                $pull: {
+                    following: data.username
+                },
+                safe: {
+                    new: true,
+                    upsert: true
+                }
+            };
+
+            const query2 = {
+                username: data.username
+            }
+
+            const update2 = {
+                $pull: {
+                    followers: data.currentUser
+                },
+                safe: {
+                    new: true,
+                    upsert: true
+                }
+            }
+
+            const response = await Promise.all([
+                User.findOneAndUpdate(query, update).exec(),
+                User.findOneAndUpdate(query2, update2).exec()
+            ]);
+
+            if (response[0] && response[1]) {
+                return true;
+            }
+            return false;
+        } catch (err) {
+            return {
+                error: err.message
+            };
+        }
+    }
+
+    const checkIfUserIsFollowed = async (data) => {
+        try {
+            const response = await User.find({username: data.currentUser, following: data.username});
+            if (response.length > 0) {
+                return true;
+            }
+
+            return false;
+        } catch (err) {
+            return {
+                error: err.message
+            };
+        }
+    }
+
+    const getUserFollowers = async (username) => {
+        try {
+            const following = await User.findOne({username}).select('following').exec();
+            if (following) {
+                return {
+                    following
+                }
+            }
+            return false;
+        } catch (err) {
+            return {
+                error: err.message
+            };
+        }
+    }
+    // ! End of functions related to following and unfollowing users
 
     return {
         getProfileData,
@@ -407,7 +531,11 @@ const Profile = (() => {
         likePost,
         unlikePost,
         checkIfPostIsLiked,
-        getPublicProfile
+        getPublicProfile,
+        followUser,
+        unfollowUser,
+        checkIfUserIsFollowed,
+        getUserFollowers
     }
 })();
 

@@ -1,13 +1,18 @@
 const _Resource = require('../../models/Resource');
 const User = require('../../models/User');
+const UserService = require('../user/user');
 const mongoose = require('mongoose');
 
 const ResourceGet = (() => {
-    const getAllResources = async (start, end) => {
+    const getAllResources = async (data) => {
         try {
-            console.log(start, end);
+            const followers = await getUserFollowers(data.username);
             // const resources = await _Resource.find().skip(parseInt(start)).limit(parseInt(end)).sort({timestamp: -1}).exec();
-            const resources = await _Resource.find().skip(parseInt(start)).sort({timestamp: -1}).exec();
+            const resources = await _Resource.find({
+                'username': { $in: [
+                    ...followers.following.following
+                ]}
+            }).sort({timestamp: -1}).exec();
             return {
                 resources: resources
             }
@@ -15,6 +20,22 @@ const ResourceGet = (() => {
             return {
                 error: err.message
             }
+        }
+    }
+
+    const getUserFollowers = async (username) => {
+        try {
+            const following = await User.findOne({username}).select('following').exec();
+            if (following) {
+                return {
+                    following
+                }
+            }
+            return false;
+        } catch (err) {
+            return {
+                error: err.message
+            };
         }
     }
 

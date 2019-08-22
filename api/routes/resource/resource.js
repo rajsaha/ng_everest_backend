@@ -7,9 +7,9 @@ const ResourceEdit = require('../../../services/resource/edit');
 const checkIfAuthenticated = require('../../../services/auth/checkIfAuthorized');
 
 // * Get calls
-router.get('/get/all/:start/:end', checkIfAuthenticated, async (req, res, next) => {
+router.post('/get/all', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await ResourceGet.getAllResources(req.params.start, req.params.end);
+        const response = await ResourceGet.getAllResources(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);

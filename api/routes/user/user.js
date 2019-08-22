@@ -94,9 +94,38 @@ router.post('/check-if-post-liked', async (req, res, next) => {
     }
 });
 
+// * Get public profile of other users
 router.get('/get-public-profile/:username', async (req, res, next) => {
     try {
         const response = await User.getPublicProfile(req.params.username);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+// * Follow / unfollow user
+router.post('/follow', async (req, res, next) => {
+    try {
+        const response = await User.followUser(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+router.post('/unfollow', async (req, res, next) => {
+    try {
+        const response = await User.unfollowUser(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+router.post('/check-if-user-followed', async (req, res, next) => {
+    try {
+        const response = await User.checkIfUserIsFollowed(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(err);
