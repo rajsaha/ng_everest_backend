@@ -80,6 +80,7 @@ const Collection = (() => {
     const pushIntoCollection = async (data) => {
         try {
             const query = {
+                username: data.username,
                 title: data.title
             };
 
@@ -105,6 +106,7 @@ const Collection = (() => {
                 }
             };
         } catch (error) {
+            console.error(error.message);
             return {
                 status: 500,
                 error: error.message
@@ -255,6 +257,21 @@ const Collection = (() => {
         }
     }
 
+    const checkIfCollectionBelongsToUserLoggedIn = async (data) => {
+        try {
+            const collection = await _Collection.find({username: data.username, _id: data.id}).exec();
+            if (collection.length > 0) {
+                return true;
+            }
+
+            return false;
+        } catch (err) {
+            return {
+                error: err.message
+            };
+        }
+    }
+
     return {
         getCollections,
         getCollectionNames,
@@ -268,7 +285,8 @@ const Collection = (() => {
         deleteResourceFromCollection2,
         deleteCollection,
         changeCollectionTitle,
-        searchUserCollections
+        searchUserCollections,
+        checkIfCollectionBelongsToUserLoggedIn
     }
 })()
 

@@ -95,6 +95,7 @@ const EditResource = (() => {
                 if (collection.collection.title === data.collectionName) {
                     // * Push into existing collection
                     await CollectionService.pushIntoCollection({
+                        username: data.username,
                         title: data.collectionName,
                         resourceId: data.resourceId
                     });

@@ -85,4 +85,14 @@ router.post('/search-user-collections', checkIfAuthenticated, async (req, res, n
     }
 });
 
+// Check if collection belongs to logged in user
+router.post('/check-if-mine', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await Collection.checkIfCollectionBelongsToUserLoggedIn(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
 module.exports = router;
