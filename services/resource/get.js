@@ -132,6 +132,28 @@ const ResourceGet = (() => {
         }
     }
 
+    const searchResources = async (query) => {
+        try {
+            if (query.charAt(0) === "#") {
+                const sansHash = query.replace('#', '');
+                // * Search for resources with tag
+                const resources = await _Resource.find({tags: { $in: [sansHash] }}).exec();
+                return {
+                    resources
+                }
+            }
+
+            const resources = await _Resource.find({title: {$regex: `${query}`, $options: 'i'}}).exec();
+            return {
+                resources
+            }
+        } catch (err) {
+            return {
+                error: err.message
+            }
+        }
+    }
+
     const searchUserResources = async (data) => {
         try {
             let query = data.query;
@@ -170,7 +192,8 @@ const ResourceGet = (() => {
         getMultipleResources,
         getFourImages,
         getProfileImageByUsername,
-        searchUserResources
+        searchUserResources,
+        searchResources
     }
 })()
 

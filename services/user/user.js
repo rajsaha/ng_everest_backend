@@ -518,6 +518,48 @@ const Profile = (() => {
             };
         }
     }
+
+    const globalUserSearch = async (query) => {
+        try {
+            const users = await User.find({
+                "$or": [
+                    { "name": { "$regex": query, "$options": "i" } },
+                    { "username": { "$regex": query, "$options": "i" } }
+                ]
+            }).exec();
+
+            return {
+                users
+            };
+        } catch (err) {
+            console.error(err);
+            return {
+                status: 500,
+                error: error.message
+            };
+        }
+    }
+
+    const globalSearch = async (query) => {
+        try {
+            const searchResult = await Promise.all([
+                globalUserSearch(query),
+                ResourceService.searchResources(query),
+                CollectionService.searchCollections(query)
+            ]);
+
+            return {
+                searchResult
+            }
+        } catch (err) {
+            console.error(err);
+            return {
+                status: 500,
+                error: error.message
+            };
+        }
+    }
+
     // ! End of functions related to following and unfollowing users
 
     return {
@@ -535,7 +577,8 @@ const Profile = (() => {
         followUser,
         unfollowUser,
         checkIfUserIsFollowed,
-        getUserFollowers
+        getUserFollowers,
+        globalSearch
     }
 })();
 

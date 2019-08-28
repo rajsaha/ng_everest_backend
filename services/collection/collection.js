@@ -238,6 +238,22 @@ const Collection = (() => {
         }
     }
 
+    const searchCollections = async (query) => {
+        try {
+            const collections = await _Collection.find({title: {$regex: `${query}`, $options: 'i'}}).exec();
+
+            return {
+                collections
+            };
+        } catch (err) {
+            console.error(err);
+            return {
+                status: 500,
+                error: error.message
+            };
+        }
+    }
+
     const searchUserCollections = async (data) => {
         try {
             const collections = await _Collection.find({
@@ -286,6 +302,7 @@ const Collection = (() => {
         deleteCollection,
         changeCollectionTitle,
         searchUserCollections,
+        searchCollections,
         checkIfCollectionBelongsToUserLoggedIn
     }
 })()
