@@ -1,7 +1,7 @@
 const _Resource = require('../../models/Resource');
 const User = require('../../models/User');
-const UserService = require('../user/user');
 const mongoose = require('mongoose');
+const selectFields = '_id username title description image url timestamp tags';
 
 const ResourceGet = (() => {
     const getAllResources = async (data) => {
@@ -136,14 +136,15 @@ const ResourceGet = (() => {
         try {
             if (query.charAt(0) === "#") {
                 const sansHash = query.replace('#', '');
+                const regex = [new RegExp(sansHash, 'i')];
                 // * Search for resources with tag
-                const resources = await _Resource.find({tags: { $in: [sansHash] }}).exec();
+                const resources = await _Resource.find({tags: { $in: regex }}, selectFields).exec();
                 return {
                     resources
                 }
             }
 
-            const resources = await _Resource.find({title: {$regex: `${query}`, $options: 'i'}}).exec();
+            const resources = await _Resource.find({title: {$regex: `${query}`, $options: 'i'}}, selectFields).exec();
             return {
                 resources
             }
@@ -159,12 +160,13 @@ const ResourceGet = (() => {
             let query = data.query;
             if (query.charAt(0) === "#") {
                 const sansHash = query.replace('#', '');
+                const regex = [new RegExp(sansHash, 'i')];
                 // * Search for resources with tag
                 const resources = await _Resource.find(
                     {
                         username: data.username, 
-                        tags: { $in: [sansHash] }
-                    }).exec();
+                        tags: { $in: regex }
+                    }, selectFields).exec();
                 return {
                     resources
                 }
@@ -174,7 +176,7 @@ const ResourceGet = (() => {
                 {
                     username: data.username, 
                     title: {$regex: `${query}`, $options: 'i'}
-                }).exec();
+                }, selectFields).exec();
             return {
                 resources
             }

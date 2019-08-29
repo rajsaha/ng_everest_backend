@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const _Collection = require('../../models/Collection');
+const selectFields = '_id username title resources timestamp';
 
 const Collection = (() => {
     const getCollections = async (username) => {
@@ -240,7 +241,7 @@ const Collection = (() => {
 
     const searchCollections = async (query) => {
         try {
-            const collections = await _Collection.find({title: {$regex: `${query}`, $options: 'i'}}).exec();
+            const collections = await _Collection.find({title: {$regex: `${query}`, $options: 'i'}}, selectFields).exec();
 
             return {
                 collections
@@ -259,7 +260,7 @@ const Collection = (() => {
             const collections = await _Collection.find({
                 username: data.username, 
                 title: {$regex: `${data.title}`, $options: 'i'}
-            }).exec();
+            }, selectFields).exec();
 
             return {
                 collections

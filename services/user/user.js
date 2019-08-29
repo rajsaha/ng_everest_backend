@@ -5,6 +5,7 @@ const CollectionService = require('../collection/collection');
 const Imgur = require('../imgur/imgur');
 const axios = require('axios');
 const bcryptjs = require('bcryptjs');
+const selectFields = 'name username image.link';
 
 const Profile = (() => {
     const getProfileData = async (username) => {
@@ -526,7 +527,7 @@ const Profile = (() => {
                     { "name": { "$regex": query, "$options": "i" } },
                     { "username": { "$regex": query, "$options": "i" } }
                 ]
-            }).exec();
+            }, selectFields).exec();
 
             return {
                 users
@@ -542,6 +543,12 @@ const Profile = (() => {
 
     const globalSearch = async (query) => {
         try {
+            if (query.charAt(0) === "#") {
+                const searchResult = await ResourceService.searchResources(query);
+                return {
+                    searchResult
+                }
+            }
             const searchResult = await Promise.all([
                 globalUserSearch(query),
                 ResourceService.searchResources(query),
