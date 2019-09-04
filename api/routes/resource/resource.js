@@ -52,6 +52,15 @@ router.post('/get/four-images-for-collection', checkIfAuthenticated, async (req,
     }
 });
 
+router.get('/get/resource-image/:resourceId', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await ResourceGet.getResourceImage(req.params.resourceId);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
 router.get('/get/one/:id', checkIfAuthenticated, async (req, res, next) => {
     try {
         const response = await ResourceGet.getResource(req.params.id);

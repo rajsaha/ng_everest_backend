@@ -527,7 +527,7 @@ const Profile = (() => {
                     { "name": { "$regex": query, "$options": "i" } },
                     { "username": { "$regex": query, "$options": "i" } }
                 ]
-            }, selectFields).exec();
+            }, selectFields).limit(10).exec();
 
             return {
                 users
@@ -546,7 +546,8 @@ const Profile = (() => {
             if (query.charAt(0) === "#") {
                 const searchResult = await ResourceService.searchResources(query);
                 return {
-                    searchResult
+                    resourceOnly: true,
+                    resources: searchResult[0]
                 }
             }
             const searchResult = await Promise.all([
@@ -556,7 +557,10 @@ const Profile = (() => {
             ]);
 
             return {
-                searchResult
+                resourceOnly: false,
+                users: searchResult[0],
+                resources: searchResult[1],
+                collections: searchResult[2]
             }
         } catch (err) {
             console.error(err);

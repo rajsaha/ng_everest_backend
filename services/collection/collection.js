@@ -241,7 +241,7 @@ const Collection = (() => {
 
     const searchCollections = async (query) => {
         try {
-            const collections = await _Collection.find({title: {$regex: `${query}`, $options: 'i'}}, selectFields).exec();
+            const collections = await _Collection.find({title: {$regex: `${query}`, $options: 'i'}}, selectFields).limit(10).exec();
 
             return {
                 collections

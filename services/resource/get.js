@@ -138,13 +138,13 @@ const ResourceGet = (() => {
                 const sansHash = query.replace('#', '');
                 const regex = [new RegExp(sansHash, 'i')];
                 // * Search for resources with tag
-                const resources = await _Resource.find({tags: { $in: regex }}, selectFields).exec();
+                const resources = await _Resource.find({tags: { $in: regex }}, selectFields).limit(10).exec();
                 return {
                     resources
                 }
             }
 
-            const resources = await _Resource.find({title: {$regex: `${query}`, $options: 'i'}}, selectFields).exec();
+            const resources = await _Resource.find({title: {$regex: `${query}`, $options: 'i'}}, selectFields).limit(10).exec();
             return {
                 resources
             }
@@ -192,6 +192,7 @@ const ResourceGet = (() => {
         getUserResources,
         getResource,
         getMultipleResources,
+        getResourceImage,
         getFourImages,
         getProfileImageByUsername,
         searchUserResources,
