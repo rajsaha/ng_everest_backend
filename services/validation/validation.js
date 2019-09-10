@@ -1,6 +1,7 @@
 let email_regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 let username_regex = /.{4,}/;
-let password_regex = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}/;
+let password_regex = /.{4,}/;
+strongPassRegex = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}/;
 
 const Validation = (() => {
     const SignUpDataValidation = async (data) => {
