@@ -1,6 +1,7 @@
 const User = require('../../models/User');
 const mongoose = require('mongoose');
 const Validation = require('../validation/validation');
+const UserService = require('../user/user');
 
 const Signup = (() => {
     const signup = async (data) => {
@@ -14,7 +15,14 @@ const Signup = (() => {
                 });
 
                 try {
+                    // Save user
                     await user.save();
+
+                    // Add self to follow list
+                    await UserService.followUser({
+                        currentUser: data.username,
+                        username: data.username
+                    });
                     return {
                         status: 200,
                         message: "Signup successful",
