@@ -55,19 +55,23 @@ const ResourceShare = (() => {
 
             await resource.save();
 
-            if (data.formData.collectionName) {
-                const collection = await CollectionService.getCollectionByTitle(data.formData.collectionName);
+            if (data.formData.collectionTitle) {
+                const collection = await CollectionService.getCollectionByTitle({
+                    collectionTitle: data.formData.collectionTitle,
+                    username: data.formData.username
+                });
                 if (collection.collection) {
                     // * Push into existing collection
                     await CollectionService.pushIntoCollection({
-                        title: data.formData.collectionName,
-                        resourceId: resource.id
+                        collectionId: collection.collection._id,
+                        resourceId: resource.id,
+                        username: data.formData.username
                     });
                 } else {
                     // * Create new collection and push resource into it
                     await CollectionService.createCollectionAndPushResource({
                         username: data.formData.username,
-                        title: data.formData.collectionName,
+                        title: data.formData.collectionTitle,
                         resourceId: resource.id
                     });
                 }

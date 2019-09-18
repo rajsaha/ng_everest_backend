@@ -52,7 +52,7 @@ const Collection = (() => {
     const getCollectionByTitle = async (data) => {
         try {
             const collection = await _Collection.findOne({
-                title: data.collectionName,
+                title: data.collectionTitle,
                 username: data.username
             }).exec();
             return {
@@ -81,8 +81,8 @@ const Collection = (() => {
     const pushIntoCollection = async (data) => {
         try {
             const query = {
-                username: data.username,
-                title: data.title
+                _id: data.collectionId,
+                username: data.username
             };
 
             const update = {
