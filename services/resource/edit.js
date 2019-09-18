@@ -54,7 +54,7 @@ const EditResource = (() => {
             // * Put resource into collection or not
             if (data.formData.collectionName) {
                 await editResourceCollection({
-                    collectionName: data.formData.collectionName,
+                    collectionTitle: data.formData.collectionName,
                     resourceId: data.formData.id,
                     username: data.formData.username
                 });
