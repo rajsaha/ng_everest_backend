@@ -54,7 +54,7 @@ const EditResource = (() => {
             // * Put resource into collection or not
             if (data.formData.collectionName) {
                 await editResourceCollection({
-                    collectionName: data.formData.collectionName,
+                    collectionTitle: data.formData.collectionName,
                     resourceId: data.formData.id,
                     username: data.formData.username
                 });
@@ -80,7 +80,7 @@ const EditResource = (() => {
 
     const editResourceCollection = async (data) => {
         try {
-            const collection = await CollectionService.getCollectionByTitle({collectionName: data.collectionName, username: data.username});
+            const collection = await CollectionService.getCollectionByTitle({collectionTitle: data.collectionTitle, username: data.username});
             const resource = await CollectionService.checkForResourceInAnyCollection({id: data.resourceId, username: data.username});
 
             // * Delete resource from existing collection
@@ -92,11 +92,11 @@ const EditResource = (() => {
             }
             // * If collection exists and resource does NOT exist in collection
             if (collection.collection !== null) {
-                if (collection.collection.title === data.collectionName) {
+                if (collection.collection.title === data.collectionTitle) {
                     // * Push into existing collection
                     await CollectionService.pushIntoCollection({
+                        collectionId: collection.collection._id,
                         username: data.username,
-                        title: data.collectionName,
                         resourceId: data.resourceId
                     });
                 }
@@ -106,7 +106,7 @@ const EditResource = (() => {
                 // * Create new collection and push resource into it
                 await CollectionService.createCollectionAndPushResource({
                     username: data.username,
-                    title: data.collectionName,
+                    title: data.collectionTitle,
                     resourceId: data.resourceId
                 });
 

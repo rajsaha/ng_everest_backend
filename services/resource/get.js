@@ -6,13 +6,31 @@ const selectFields = '_id username title description image url timestamp tags';
 const ResourceGet = (() => {
     const getAllResources = async (data) => {
         try {
+            // Get users that current logged in user follows
             const followers = await getUserFollowers(data.username);
-            // const resources = await _Resource.find().skip(parseInt(start)).limit(parseInt(end)).sort({timestamp: -1}).exec();
-            const resources = await _Resource.find({
-                'username': { $in: [
-                    ...followers.following.following
-                ]}
-            }).sort({timestamp: -1}).exec();
+
+            // Set up pagination
+            const pageNo = parseInt(data.pageNo);
+            const size = parseInt(data.size);
+            let query = {};
+            if (pageNo < 0 || pageNo === 0) {
+                return {
+                    error: 'Invalid page number'
+                }
+            }
+            query.skip = size * (pageNo -1);
+            query.limit = size;
+            query.username = {
+                $in: [...followers.following.following]
+            }
+            
+            const resources = await _Resource
+            .find({username: query.username})
+            .skip(query.skip)
+            .limit(query.limit)
+            .sort({timestamp: -1})
+            .exec();
+            
             return {
                 resources: resources
             }
@@ -39,15 +57,31 @@ const ResourceGet = (() => {
         }
     }
 
-    const getUserResources = async (username) => {
+    const getUserResources = async (data) => {
         try {
-            const resources = await _Resource.find({username}, 
+            // Set up pagination
+            const pageNo = parseInt(data.pageNo);
+            const size = parseInt(data.size);
+            let query = {};
+            if (pageNo < 0 || pageNo === 0) {
+                return {
+                    error: 'Invalid page number'
+                }
+            }
+            query.skip = size * (pageNo -1);
+            query.limit = size;
+
+            const resources = await _Resource
+            .find({username: data.username}, 
                 {
                     comments: 0, 
                     deleteHash: 0, 
                     recommended_by: 0, 
                     recommended_by_count: 0
-                }).sort({timestamp: -1}).exec();
+                })
+            .skip(query.skip)
+            .limit(query.limit)    
+            .sort({timestamp: -1}).exec();
             return {
                 resources: resources
             }
