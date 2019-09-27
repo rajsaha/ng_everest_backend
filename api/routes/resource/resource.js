@@ -25,6 +25,15 @@ router.post('/get/all/:username', checkIfAuthenticated, async (req, res, next) =
     }
 });
 
+router.post('/get/resource-comments', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await ResourceGet.getResourceComments(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
 router.post('/get/multiple-resources', checkIfAuthenticated, async (req, res, next) => {
     try {
         const response = await ResourceGet.getMultipleResources(req.body);
