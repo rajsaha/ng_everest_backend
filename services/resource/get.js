@@ -61,7 +61,6 @@ const ResourceGet = (() => {
 
   const getResourceComments = async data => {
     try {
-        console.log(data);
       // Set up pagination
       const pageNo = parseInt(data.pageNo);
       const size = parseInt(data.size);
@@ -74,29 +73,50 @@ const ResourceGet = (() => {
       query.skip = size * (pageNo - 1);
       query.limit = size;
 
-      //   const comments = await _Resource
-      //     .find(
-      //       { _id: data.resourceId },
-      //       { comments: { $slice: [query.skip, query.limit] } }
-      //     )
-      //     .select("comments")
-      //     .sort({ timestamp: -1 })
-      //     .exec();
-
-      const comments = await _Resource.aggregate(
-        [
-            { $match: { _id: data.resourceId } },
-            { $unwind: "$comments" },
-            { $sort: { "comments.timestamp": -1 } },
-            { $skip: query.skip },
-            { $limit: query.limit }
-        ]
-      );
-
-      console.log(comments);
+      const comments = await _Resource
+        .aggregate([
+          {
+            $facet: {
+              comments: [
+                {
+                  $unwind: "$comments"
+                },
+                {
+                  $project: {
+                    username: "$comments.username",
+                    content: "$comments.content",
+                    timestamp: "$comments.timestamp",
+                    _id: 0
+                  }
+                },
+                {
+                  $skip: query.skip
+                },
+                {
+                  $limit: 5
+                },
+                {
+                  $sort: {
+                    timestamp: -1
+                  }
+                }
+              ],
+              count: [
+                {
+                  $group: {
+                    _id: 0,
+                    count: { $sum: 1 }
+                  }
+                }
+              ]
+            }
+          }
+        ])
+        .exec();
 
       return {
-        comments
+        comments: comments[0].comments,
+        count: comments[0].count[0].count
       };
     } catch (err) {
       return {
