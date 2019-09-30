@@ -73,6 +73,8 @@ const ResourceGet = (() => {
       query.skip = size * (pageNo - 1);
       query.limit = size;
 
+      // const comments = await _Resource.findById(data.resourceId, { comments: { $slice: [query.skip, 5] } });
+
       const comments = await _Resource
         .aggregate([
           {
@@ -80,6 +82,13 @@ const ResourceGet = (() => {
               comments: [
                 {
                   $unwind: "$comments"
+                },
+                {
+                  $group: {
+                    _id: {
+                      id: data.resourceId
+                    }
+                  }
                 },
                 {
                   $project: {
@@ -97,7 +106,7 @@ const ResourceGet = (() => {
                 },
                 {
                   $sort: {
-                    timestamp: -1
+                    timestamp: 1
                   }
                 }
               ],
@@ -113,6 +122,8 @@ const ResourceGet = (() => {
           }
         ])
         .exec();
+
+        console.log(comments);
 
       return {
         comments: comments[0].comments,
