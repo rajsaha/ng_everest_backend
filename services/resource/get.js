@@ -73,22 +73,18 @@ const ResourceGet = (() => {
       query.skip = size * (pageNo - 1);
       query.limit = size;
 
-      // const comments = await _Resource.findById(data.resourceId, { comments: { $slice: [query.skip, 5] } });
-
       const comments = await _Resource
         .aggregate([
           {
             $facet: {
               comments: [
                 {
-                  $unwind: "$comments"
+                  $match: {
+                    _id: mongoose.Types.ObjectId(data.resourceId)
+                  }
                 },
                 {
-                  $group: {
-                    _id: {
-                      id: data.resourceId
-                    }
-                  }
+                  $unwind: "$comments"
                 },
                 {
                   $project: {
@@ -112,6 +108,14 @@ const ResourceGet = (() => {
               ],
               count: [
                 {
+                  $match: {
+                    _id: mongoose.Types.ObjectId(data.resourceId)
+                  }
+                },
+                {
+                  $unwind: "$comments"
+                },
+                {
                   $group: {
                     _id: 0,
                     count: { $sum: 1 }
@@ -122,8 +126,6 @@ const ResourceGet = (() => {
           }
         ])
         .exec();
-
-        console.log(comments);
 
       return {
         comments: comments[0].comments,
