@@ -34,6 +34,15 @@ router.post('/get/resource-comments', checkIfAuthenticated, async (req, res, nex
     }
 });
 
+router.get('/get/resource-comments-count/:resourceId', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await ResourceGet.getResourceCommentsCount(req.params.resourceId);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
 router.post('/get/multiple-resources', checkIfAuthenticated, async (req, res, next) => {
     try {
         const response = await ResourceGet.getMultipleResources(req.body);

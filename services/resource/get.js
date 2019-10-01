@@ -25,14 +25,14 @@ const ResourceGet = (() => {
       };
 
       const resources = await _Resource
-        .find({ username: query.username })
+        .find({ username: query.username }, { comments: 0 })
         .skip(query.skip)
         .limit(query.limit)
         .sort({ timestamp: -1 })
         .exec();
 
       return {
-        resources: resources
+        resources
       };
     } catch (err) {
       return {
@@ -137,6 +137,38 @@ const ResourceGet = (() => {
       };
     }
   };
+
+  const getResourceCommentsCount = async resourceId => {
+    try {
+      const commentCount = await _Resource.aggregate([
+        {
+          $match: {
+            _id: mongoose.Types.ObjectId(resourceId)
+          }
+        },
+        {
+          $unwind: "$comments"
+        },
+        {
+          $group: {
+            _id: 0,
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      if (commentCount[0]) {
+        return commentCount[0].count; 
+      } else {
+        return null;
+      }
+
+    } catch (err) {
+      return {
+        error: err.message
+      };
+    }
+  }
 
   const getUserResources = async data => {
     try {
@@ -328,6 +360,7 @@ const ResourceGet = (() => {
     getAllResources,
     getUserResources,
     getResourceComments,
+    getResourceCommentsCount,
     getResource,
     getMultipleResources,
     getResourceImage,
