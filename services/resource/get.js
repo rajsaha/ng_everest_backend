@@ -98,7 +98,7 @@ const ResourceGet = (() => {
                   $skip: query.skip
                 },
                 {
-                  $limit: 5
+                  $limit: query.limit
                 },
                 {
                   $sort: {
