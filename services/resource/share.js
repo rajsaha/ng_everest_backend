@@ -94,6 +94,17 @@ const ResourceShare = (() => {
         }
     }
 
+    const shareArticle = async (data) => {
+        try {
+            
+        } catch (error) {
+            return {
+                status: 500,
+                error: error.message
+            };
+        }
+    }
+
     return {
         getOpenGraphData,
         shareResource
