@@ -25,12 +25,12 @@ const Profile = (() => {
         }
     }
 
-    const getPublicProfile = async (username) => {
+    const getPublicProfile = async (data) => {
         try {
             const result = await Promise.all([
-                getProfileData(username), 
-                ResourceService.getUserResources(username),
-                CollectionService.getCollections(username)
+                getProfileData(data.username), 
+                ResourceService.getUserResources(data),
+                CollectionService.getCollections(data.username)
             ]);
 
             return {

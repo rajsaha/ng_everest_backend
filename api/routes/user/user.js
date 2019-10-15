@@ -95,9 +95,9 @@ router.post('/check-if-post-liked', async (req, res, next) => {
 });
 
 // * Get public profile of other users
-router.get('/get-public-profile/:username', async (req, res, next) => {
+router.post('/get-public-profile', async (req, res, next) => {
     try {
-        const response = await User.getPublicProfile(req.params.username);
+        const response = await User.getPublicProfile(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(err);
