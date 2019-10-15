@@ -20,7 +20,6 @@ var ResourceSchema = new mongoose.Schema({
   },
   url: {
     type: String,
-    required: true,
     trim: true
   },
   title: {
@@ -45,7 +44,6 @@ var ResourceSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    required: true,
     trim: true
   },
   deleteHash: {

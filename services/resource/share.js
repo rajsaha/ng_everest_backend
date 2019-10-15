@@ -96,81 +96,9 @@ const ResourceShare = (() => {
     }
   };
 
-  const shareArticle = async data => {
-    try {
-      let saveCustomImageForResourceResponse = null;
-      let image = null;
-      let deleteHash = null;
-
-      // * Handle user uploading custom image
-      if (data.customImage) {
-        // * Get image link and delete hash from imgur
-        saveCustomImageForResourceResponse = await Imgur.saveImage(
-          data.customImage
-        );
-        image = saveCustomImageForResourceResponse.data.data.link;
-        deleteHash = saveCustomImageForResourceResponse.data.data.deletehash;
-      } else {
-        image = data.formData.imageLink;
-      }
-
-      const resource = new Resource({
-        _id: new mongoose.Types.ObjectId(),
-        username: data.formData.username,
-        url: 'n/a',
-        title: data.formData.title,
-        type: data.formData.type,
-        description: data.formData.body,
-        image: image,
-        deleteHash: deleteHash,
-        tags: data.tags
-      });
-
-      await resource.save();
-
-      if (data.formData.collectionTitle) {
-        const collection = await CollectionService.getCollectionByTitle({
-          collectionTitle: data.formData.collectionTitle,
-          username: data.formData.username
-        });
-        if (collection.collection) {
-          // * Push into existing collection
-          await CollectionService.pushIntoCollection({
-            collectionId: collection.collection._id,
-            resourceId: resource.id,
-            username: data.formData.username
-          });
-        } else {
-          // * Create new collection and push resource into it
-          await CollectionService.createCollectionAndPushResource({
-            username: data.formData.username,
-            title: data.formData.collectionTitle,
-            resourceId: resource.id
-          });
-        }
-      }
-
-      return {
-        message: {
-          error: false,
-          status: 200,
-          data: {
-            message: "Resource saved!"
-          }
-        }
-      };
-    } catch (error) {
-      return {
-        status: 500,
-        error: error.message
-      };
-    }
-  };
-
   return {
     getOpenGraphData,
-    shareResource,
-    shareArticle
+    shareResource
   };
 })();
 

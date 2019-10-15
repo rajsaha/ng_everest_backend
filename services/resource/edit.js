@@ -5,6 +5,7 @@ const Imgur = require('../imgur/imgur');
 const EditResource = (() => {
     const editResource = async (data) => {
         try {
+            console.log(data);
             let saveCustomImageForResourceResponse = null;
             let image = null;
             let deleteHash = null;
