@@ -29,14 +29,12 @@ const Profile = (() => {
         try {
             const result = await Promise.all([
                 getProfileData(data.username), 
-                ResourceService.getUserResources(data),
                 CollectionService.getCollections(data.username)
             ]);
 
             return {
                 profileData: result[0],
-                userResources: result[1],
-                userCollections: result[2]
+                userCollections: result[1]
             }
         } catch (err) {
             return {
