@@ -81,8 +81,8 @@ const EditResource = (() => {
 
     const editResourceCollection = async (data) => {
         try {
-            const collection = await CollectionService.getCollectionByTitle({collectionTitle: data.collectionTitle, username: data.username});
-            const resource = await CollectionService.checkForResourceInAnyCollection({id: data.resourceId, username: data.username});
+            const collection = await CollectionService.getCollectionByTitle({username: data.username, collectionTitle: data.collectionTitle});
+            const resource = await CollectionService.checkForResourceInAnyCollection({username: data.username, id: data.resourceId});
 
             // * Delete resource from existing collection
             if (resource.isInCollection && data.collectionName !== resource.response[0].title) {
