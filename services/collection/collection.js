@@ -159,10 +159,24 @@ const Collection = (() => {
 
   const createCollectionAndPushResource = async data => {
     try {
+      // Check if collection exists
+      const checkIfExists = await getCollectionByTitle({
+        title: data.collectionTitle,
+        username: data.username
+      });
+
+      if (checkIfExists.collection !== null) {
+        return {
+          message: {
+            error: 'Collection already exists!',
+            status: 500
+          }
+        };
+      }
       // * Create new collection
       const collection = new _Collection({
         username: data.username,
-        title: data.title
+        title: data.collectionTitle
       });
 
       await collection.save();
