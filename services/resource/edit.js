@@ -79,13 +79,13 @@ const EditResource = (() => {
         }
     }
 
-    const editResourceCollection = async (data) => {
+    const addResourceToCollection = async (data) => {
         try {
-            const collection = await CollectionService.getCollectionByTitle({username: data.username, collectionTitle: data.collectionTitle});
+            const collection = await CollectionService.getCollectionById(data.collectionId);
             const resource = await CollectionService.checkForResourceInAnyCollection({username: data.username, id: data.resourceId});
 
             // * Delete resource from existing collection
-            if (resource.isInCollection && data.collectionName !== resource.response[0].title) {
+            if (resource.isInCollection && data.collectionName !== resource.response[0].id) {
                 await CollectionService.deleteResourceFromCollection({
                     collectionId: resource.response[0].id,
                     resourceId: data.resourceId
@@ -93,23 +93,14 @@ const EditResource = (() => {
             }
             // * If collection exists and resource does NOT exist in collection
             if (collection.collection !== null) {
-                if (collection.collection.title === data.collectionTitle) {
+                if (collection.collection.id === data.collectionId) {
                     // * Push into existing collection
                     await CollectionService.pushIntoCollection({
-                        collectionId: collection.collection._id,
+                        collectionId: collection.collection.id,
                         username: data.username,
                         resourceId: data.resourceId
                     });
                 }
-
-                return true;
-            } else {
-                // * Create new collection and push resource into it
-                await CollectionService.createCollectionAndPushResource({
-                    username: data.username,
-                    title: data.collectionTitle,
-                    resourceId: data.resourceId
-                });
 
                 return true;
             }
@@ -197,7 +188,7 @@ const EditResource = (() => {
 
     return {
         editResource,
-        editResourceCollection,
+        addResourceToCollection,
         removeTag,
         addComment
     }

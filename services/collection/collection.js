@@ -21,13 +21,27 @@ const Collection = (() => {
     }
   };
 
-  const getCollectionNames = async username => {
+  const getCollectionNames = async (data) => {
     try {
+      // Set up pagination
+      const pageNo = parseInt(data.pageNo);
+      const size = parseInt(data.size);
+      let query = {};
+      if (pageNo < 0 || pageNo === 0) {
+        return {
+          error: "Invalid page number"
+        };
+      }
+      query.skip = size * (pageNo - 1);
+      query.limit = size;
+
       let collectionWithImages = [];
       const collections = await _Collection
         .find({
-          username: username
+          username: data.username
         })
+        .skip(query.skip)
+        .limit(query.limit)
         .exec();
 
       for (let collection of collections) {
