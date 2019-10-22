@@ -93,12 +93,12 @@ const Collection = (() => {
     try {
       const collection = await _Collection
         .findOne({
-          title: data.collectionTitle,
+          title: data.title,
           username: data.username
         })
         .exec();
       return {
-        collection: collection
+        collection
       };
     } catch (err) {
       return {
@@ -165,11 +165,12 @@ const Collection = (() => {
         username: data.username
       });
 
-      if (checkIfExists.collection !== null) {
+      if (checkIfExists.collection !== null && checkIfExists.collection.title === data.collectionTitle) {
         return {
           message: {
-            error: 'Collection already exists!',
-            status: 500
+            error: true,
+            status: 500,
+            message: 'Collection already exists!'
           }
         };
       }
