@@ -21,7 +21,7 @@ const Collection = (() => {
     }
   };
 
-  const getCollectionNames = async (data) => {
+  const getCollectionNames = async data => {
     try {
       // Set up pagination
       const pageNo = parseInt(data.pageNo);
@@ -43,20 +43,21 @@ const Collection = (() => {
         .skip(query.skip)
         .limit(query.limit)
         .exec();
-
       for (let collection of collections) {
         const resources = collection.resources;
-
-        for (let resource of resources) {
-          const result = await ResourceService.getResourceImage(resource);
-          if (result) {
-            collectionWithImages.push({
-              id: collection.id,
-              title: collection.title,
-              image: result.image
-            });
-          }
-          break;
+        if (resources[0]) {
+          const result = await ResourceService.getResourceImage(resources[0]);
+          collectionWithImages.push({
+            id: collection.id,
+            title: collection.title,
+            image: result.image ? result.image : ''
+          });
+        } else {
+          collectionWithImages.push({
+            id: collection.id,
+            title: collection.title,
+            image: ''
+          });
         }
       }
 
@@ -165,12 +166,15 @@ const Collection = (() => {
         username: data.username
       });
 
-      if (checkIfExists.collection !== null && checkIfExists.collection.title === data.collectionTitle) {
+      if (
+        checkIfExists.collection !== null &&
+        checkIfExists.collection.title === data.collectionTitle
+      ) {
         return {
           message: {
             error: true,
             status: 500,
-            message: 'Collection already exists!'
+            message: "Collection already exists!"
           }
         };
       }
