@@ -50,13 +50,13 @@ const Collection = (() => {
           collectionWithImages.push({
             id: collection.id,
             title: collection.title,
-            image: result.image ? result.image : ''
+            image: result.image ? result.image : ""
           });
         } else {
           collectionWithImages.push({
             id: collection.id,
             title: collection.title,
-            image: ''
+            image: ""
           });
         }
       }
@@ -160,6 +160,7 @@ const Collection = (() => {
 
   const createCollectionAndPushResource = async data => {
     try {
+      let ifCollectionExists = false;
       // Check if collection exists
       const checkIfExists = await getCollectionByTitle({
         title: data.collectionTitle,
@@ -170,6 +171,28 @@ const Collection = (() => {
         checkIfExists.collection !== null &&
         checkIfExists.collection.title === data.collectionTitle
       ) {
+        ifCollectionExists = true;
+      }
+
+      // ! If collection exists and it's a new resource...
+      // ! push into collection
+      if (ifCollectionExists && data.newResource) {
+        await pushIntoCollection({
+          collectionId: checkIfExists.collection.id,
+          username: data.username,
+          resourceId: data.resourceId
+        });
+
+        return {
+          message: {
+            error: false,
+            status: 200,
+            data: {
+              message: "Saved to collection!"
+            }
+          }
+        };
+      } else if (ifCollectionExists) {
         return {
           message: {
             error: true,
@@ -178,6 +201,7 @@ const Collection = (() => {
           }
         };
       }
+
       // * Create new collection
       const collection = new _Collection({
         username: data.username,
