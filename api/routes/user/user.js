@@ -141,4 +141,13 @@ router.get('/global-search/:query', async (req, res, next) => {
     }
 });
 
+router.get('/get-followers-following/:username', async (req, res, next) => {
+    try {
+        const response = await User.getFollowersFollowing(req.params.username);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(err);
+    }
+});
+
 module.exports = router;
