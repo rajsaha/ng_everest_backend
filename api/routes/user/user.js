@@ -95,9 +95,9 @@ router.post('/check-if-post-liked', async (req, res, next) => {
 });
 
 // * Get public profile of other users
-router.get('/get-public-profile/:username', async (req, res, next) => {
+router.post('/get-public-profile', async (req, res, next) => {
     try {
-        const response = await User.getPublicProfile(req.params.username);
+        const response = await User.getPublicProfile(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(err);
@@ -135,6 +135,15 @@ router.post('/check-if-user-followed', async (req, res, next) => {
 router.get('/global-search/:query', async (req, res, next) => {
     try {
         const response = await User.globalSearch(req.params.query);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+router.get('/get-followers-following/:username', async (req, res, next) => {
+    try {
+        const response = await User.getFollowersFollowing(req.params.username);
         res.status(200).json(response);
     } catch (err) {
         console.error(err);

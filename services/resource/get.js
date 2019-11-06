@@ -25,14 +25,63 @@ const ResourceGet = (() => {
       };
 
       const resources = await _Resource
-        .find({ username: query.username }, { comments: 0 })
-        .skip(query.skip)
-        .limit(query.limit)
-        .sort({ timestamp: -1 })
+        .aggregate([
+          {
+            $facet: {
+              resources: [
+                {
+                  $sort: {
+                    timestamp: -1
+                  }
+                },
+                {
+                  $match: {
+                    username: query.username
+                  }
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    username: 1,
+                    url: 1,
+                    title: 1,
+                    type: 1,
+                    tags: 1,
+                    description: 1,
+                    image: 1,
+                    deleteHash: 1,
+                    timestamp: 1,
+                    recommended_by_count: 1
+                  }
+                },
+                {
+                  $skip: query.skip
+                },
+                {
+                  $limit: query.limit
+                }
+              ],
+              count: [
+                {
+                  $match: {
+                    username: query.username
+                  }
+                },
+                {
+                  $group: {
+                    _id: 0,
+                    count: { $sum: 1 }
+                  }
+                }
+              ]
+            }
+          }
+        ])
         .exec();
 
       return {
-        resources
+        resources: resources[0].resources,
+        count: resources[0].count[0].count
       };
     } catch (err) {
       return {
@@ -158,17 +207,16 @@ const ResourceGet = (() => {
       ]);
 
       if (commentCount[0]) {
-        return commentCount[0].count; 
+        return commentCount[0].count;
       } else {
         return null;
       }
-
     } catch (err) {
       return {
         error: err.message
       };
     }
-  }
+  };
 
   const getUserResources = async data => {
     try {
@@ -183,23 +231,64 @@ const ResourceGet = (() => {
       }
       query.skip = size * (pageNo - 1);
       query.limit = size;
-
+      
       const resources = await _Resource
-        .find(
-          { username: data.username },
+        .aggregate([
           {
-            comments: 0,
-            deleteHash: 0,
-            recommended_by: 0,
-            recommended_by_count: 0
+            $facet: {
+              resources: [
+                {
+                  $sort: {
+                    timestamp: -1
+                  }
+                },
+                {
+                  $match: {
+                    username: data.username
+                  }
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    username: 1,
+                    url: 1,
+                    title: 1,
+                    type: 1,
+                    tags: 1,
+                    description: 1,
+                    image: 1,
+                    timestamp: 1,
+                    recommended_by_count: 1
+                  }
+                },
+                {
+                  $skip: query.skip
+                },
+                {
+                  $limit: query.limit
+                }
+              ],
+              count: [
+                {
+                  $match: {
+                    username: data.username
+                  }
+                },
+                {
+                  $group: {
+                    _id: 0,
+                    count: { $sum: 1 }
+                  }
+                }
+              ]
+            }
           }
-        )
-        .skip(query.skip)
-        .limit(query.limit)
-        .sort({ timestamp: -1 })
+        ])
         .exec();
+
       return {
-        resources: resources
+        resources: resources[0].resources,
+        count: resources[0].count[0].count
       };
     } catch (err) {
       return {
