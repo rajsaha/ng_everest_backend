@@ -1,7 +1,8 @@
 const _Resource = require("../../models/Resource");
 const User = require("../../models/User");
 const mongoose = require("mongoose");
-const selectFields = "_id username title description image url timestamp tags";
+const selectFields =
+  "_id username title description image url timestamp tags recommended_by_count type";
 
 const ResourceGet = (() => {
   const getAllResources = async data => {
@@ -231,7 +232,7 @@ const ResourceGet = (() => {
       }
       query.skip = size * (pageNo - 1);
       query.limit = size;
-      
+
       const resources = await _Resource
         .aggregate([
           {
@@ -376,15 +377,37 @@ const ResourceGet = (() => {
     }
   };
 
-  const searchResources = async query => {
+  const searchResources = async (query, options) => {
     try {
+      // ! If resource isn't selected
+      if (!options.resource) {
+        return;
+      }
+      
+      let recent = false;
+      let recommend = false;
+      let article = true;
+
+      if (options && options.orderBy === "recent") {
+        recent = true;
+      }
+
+      if (options && options.orderBy === "recommend") {
+        recommend = true;
+      }
+
       if (query.charAt(0) === "#") {
         const sansHash = query.replace("#", "");
         const regex = [new RegExp(sansHash, "i")];
+
         // * Search for resources with tag
         const resources = await _Resource
           .find({ tags: { $in: regex } }, selectFields)
           .limit(10)
+          .sort({
+            recommended_by_count: recommend ? -1 : 1,
+            timestamp: recent ? -1 : 1
+          })
           .exec();
         return {
           resources
@@ -394,6 +417,10 @@ const ResourceGet = (() => {
       const resources = await _Resource
         .find({ title: { $regex: `${query}`, $options: "i" } }, selectFields)
         .limit(10)
+        .sort({
+          recommended_by_count: recommend ? -1 : 1,
+          timestamp: recent ? -1 : 1
+        })
         .exec();
       return {
         resources

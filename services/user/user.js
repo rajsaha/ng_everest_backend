@@ -545,8 +545,12 @@ const Profile = (() => {
     }
   };
 
-  const globalUserSearch = async query => {
+  const globalUserSearch = async (query, options) => {
     try {
+      // ! If user isn't selected
+      if (!options.user) {
+        return;
+      }
       const users = await User.find(
         {
           $or: [
@@ -571,19 +575,25 @@ const Profile = (() => {
     }
   };
 
-  const globalSearch = async query => {
+  const globalSearch = async data => {
     try {
+      const query = decodeURIComponent(data.query);
+      const options = data.options;
+
+      // Resource only
       if (query.charAt(0) === "#") {
-        const searchResult = await ResourceService.searchResources(query);
+        const searchResult = await ResourceService.searchResources(query, options);
         return {
           resourceOnly: true,
-          resources: searchResult[0]
+          resources: searchResult.resources
         };
       }
+
+      // All types
       const searchResult = await Promise.all([
-        globalUserSearch(query),
-        ResourceService.searchResources(query),
-        CollectionService.searchCollections(query)
+        globalUserSearch(query, options),
+        ResourceService.searchResources(query, options),
+        CollectionService.searchCollections(query, options)
       ]);
 
       return {

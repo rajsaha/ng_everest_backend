@@ -338,8 +338,12 @@ const Collection = (() => {
     }
   };
 
-  const searchCollections = async query => {
+  const searchCollections = async (query, options) => {
     try {
+      // ! If collection isn't selected
+      if (!options.collection) {
+        return;
+      }
       const collections = await _Collection
         .find({ title: { $regex: `${query}`, $options: "i" } }, selectFields)
         .limit(10)

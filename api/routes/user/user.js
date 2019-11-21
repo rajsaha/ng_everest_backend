@@ -132,9 +132,9 @@ router.post('/check-if-user-followed', async (req, res, next) => {
     }
 });
 
-router.get('/global-search/:query', async (req, res, next) => {
+router.post('/global-search/:query', async (req, res, next) => {
     try {
-        const response = await User.globalSearch(req.params.query);
+        const response = await User.globalSearch(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(err);
