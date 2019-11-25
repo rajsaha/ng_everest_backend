@@ -313,18 +313,11 @@ const ResourceGet = (() => {
 
   const getMultipleResources = async data => {
     try {
-      const getQueries = data => {
-        let mongooseQueryArray = [];
-        for (let resourceId of data) {
-          mongooseQueryArray.push(mongoose.Types.ObjectId(resourceId));
-        }
-        return mongooseQueryArray;
-      };
-
       const resources = await _Resource
         .find({
           _id: { $in: [...getQueries(data)] }
         })
+        .sort({ timestamp: -1 })
         .exec();
       return {
         resources
@@ -334,6 +327,32 @@ const ResourceGet = (() => {
         error: err.message
       };
     }
+  };
+
+  const getCollectionResources = async data => {
+    try {
+      const resources = await _Resource
+        .find({
+          _id: { $in: [...getQueries(data)] }
+        })
+        .sort({ timestamp: -1 })
+        .exec();
+      return {
+        resources
+      };
+    } catch (err) {
+      return {
+        error: err.message
+      };
+    }
+  };
+
+  const getQueries = data => {
+    let mongooseQueryArray = [];
+    for (let resourceId of data) {
+      mongooseQueryArray.push(mongoose.Types.ObjectId(resourceId));
+    }
+    return mongooseQueryArray;
   };
 
   const getFourImages = async data => {

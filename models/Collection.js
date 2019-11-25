@@ -10,6 +10,11 @@ var CollectionSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    description: {
+        type: String,
+        required: false,
+        trim: true
+    },
     resources: [{
         type: [String],
         trim: true,

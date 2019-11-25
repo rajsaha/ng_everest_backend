@@ -54,10 +54,11 @@ const EditResource = (() => {
 
             // * Put resource into collection or not
             if (data.formData.collectionName) {
-                await editResourceCollection({
+                await CollectionService.createCollectionAndPushResource({
                     collectionTitle: data.formData.collectionName,
                     resourceId: data.formData.id,
-                    username: data.formData.username
+                    username: data.formData.username,
+                    newResource: false
                 });
             }
 
