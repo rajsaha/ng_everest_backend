@@ -349,8 +349,8 @@ const ResourceGet = (() => {
 
   const getQueries = data => {
     let mongooseQueryArray = [];
-    for (let resourceId of data) {
-      mongooseQueryArray.push(mongoose.Types.ObjectId(resourceId));
+    for (let resource of data) {
+      mongooseQueryArray.push(mongoose.Types.ObjectId(resource.resourceId));
     }
     return mongooseQueryArray;
   };

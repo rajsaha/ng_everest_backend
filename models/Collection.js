@@ -16,9 +16,11 @@ var CollectionSchema = new mongoose.Schema({
         trim: true
     },
     resources: [{
-        type: [String],
-        trim: true,
-        unique: true
+        resourceId: String,
+        timestamp: {
+            type: Date,
+            default: Date.now
+        }
     }],
     timestamp: {
         type: Date,

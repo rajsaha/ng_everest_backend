@@ -46,7 +46,7 @@ const Collection = (() => {
       for (let collection of collections) {
         const resources = collection.resources;
         if (resources[0]) {
-          const result = await ResourceService.getResourceImage(resources[0]);
+          const result = await ResourceService.getResourceImage(resources[0].resourceId);
           collectionWithImages.push({
             id: collection.id,
             title: collection.title,
@@ -74,12 +74,12 @@ const Collection = (() => {
   const getCollectionNameByResourceId = async data => {
     try {
       const collection = await _Collection
-        .findOne({
+        .find({
           username: data.username,
-          resources: data.resourceId
+          'resources.resourceId': data.resourceId
         })
         .select("title")
-        .exec();
+        .exec();  
       return {
         collection: collection
       };
@@ -130,7 +130,7 @@ const Collection = (() => {
 
       const update = {
         $push: {
-          resources: data.resourceId
+          resources: { resourceId: data.resourceId, timestamp: data.timestamp }
         },
         safe: {
           new: true,
@@ -180,7 +180,8 @@ const Collection = (() => {
         await pushIntoCollection({
           collectionId: checkIfExists.collection.id,
           username: data.username,
-          resourceId: data.resourceId
+          resourceId: data.resourceId,
+          timestamp: data.formData.timestamp
         });
 
         return {
@@ -217,7 +218,7 @@ const Collection = (() => {
 
       const update = {
         $push: {
-          resources: data.resourceId
+          resources: { resourceId: data.resourceId }
         },
         safe: {
           new: true,
@@ -248,7 +249,7 @@ const Collection = (() => {
   const checkForResourceInAnyCollection = async data => {
     const response = await _Collection
       .find({
-        resources: data.id,
+        'resources.resourceId': data.id,
         username: data.username
       })
       .exec();
@@ -271,7 +272,7 @@ const Collection = (() => {
         },
         {
           $pull: {
-            resources: data.resourceId
+            resources: { resourceId: data.resourceId }
           }
         }
       )
