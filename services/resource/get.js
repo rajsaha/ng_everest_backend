@@ -1,6 +1,7 @@
 const _Resource = require("../../models/Resource");
 const User = require("../../models/User");
 const mongoose = require("mongoose");
+
 const selectFields =
   "_id username title description image url timestamp tags recommended_by_count type";
 
@@ -319,6 +320,15 @@ const ResourceGet = (() => {
         })
         .sort({ timestamp: -1 })
         .exec();
+
+      let monthsArray = [];
+      for (let resource of resources) {
+        let timestamp = resource.timestamp.getMonth();
+        if (monthsArray.includes(timestamp)) {
+          console.log(true);
+        }
+      }
+
       return {
         resources
       };
@@ -327,6 +337,25 @@ const ResourceGet = (() => {
         error: err.message
       };
     }
+  };
+
+  const getMonthName = month => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ];
+
+    return monthNames[month];
   };
 
   const getCollectionResources = async data => {
@@ -402,7 +431,7 @@ const ResourceGet = (() => {
       if (!options.resource) {
         return;
       }
-      
+
       let recent = false;
       let recommend = false;
       let article = true;
