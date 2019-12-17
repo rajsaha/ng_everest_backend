@@ -339,6 +339,30 @@ const Collection = (() => {
     }
   };
 
+  const changeCollectionDescription = async data => {
+    try {
+      const query = {
+        _id: data.id
+      };
+      const update = {
+        description: data.description
+      };
+
+      const response = await _Collection.updateOne(query, update).exec();
+      if (response) {
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error(err);
+      return {
+        status: 500,
+        error: error.message
+      };
+    }
+  };
+
   const searchCollections = async (query, options) => {
     try {
       // ! If collection isn't selected
@@ -416,6 +440,7 @@ const Collection = (() => {
     deleteResourceFromCollection2,
     deleteCollection,
     changeCollectionTitle,
+    changeCollectionDescription,
     searchUserCollections,
     searchCollections,
     checkIfCollectionBelongsToUserLoggedIn
