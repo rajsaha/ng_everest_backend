@@ -18,7 +18,8 @@ const mongodb_connection_string = `mongodb://${process.env.MLAB_U}:${process.env
 
 mongoose.connect(mongodb_connection_string, {
     useNewUrlParser: true,
-    useFindAndModify: false
+    useFindAndModify: false,
+    useUnifiedTopology: true
 }).then((res) => {
     console.log('Connected to database');
 });
