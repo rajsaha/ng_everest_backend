@@ -23,7 +23,40 @@ var UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    image: {
+    lgImage: {
+        link: {
+            type: String
+        },
+        id: {
+            type: String
+        },
+        deleteHash: {
+            type: String
+        }
+    },
+    mdImage: {
+        link: {
+            type: String
+        },
+        id: {
+            type: String
+        },
+        deleteHash: {
+            type: String
+        }
+    },
+    smImage: {
+        link: {
+            type: String
+        },
+        id: {
+            type: String
+        },
+        deleteHash: {
+            type: String
+        }
+    },
+    xsImage: {
         link: {
             type: String
         },

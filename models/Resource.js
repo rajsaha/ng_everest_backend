@@ -42,13 +42,38 @@ var ResourceSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  image: {
-    type: String,
-    trim: true
+  lgImage: {
+    link: {
+      type: String
+    },
+    id: {
+      type: String
+    },
+    deleteHash: {
+      type: String
+    }
   },
-  deleteHash: {
-    type: String,
-    trim: true
+  mdImage: {
+    link: {
+      type: String
+    },
+    id: {
+      type: String
+    },
+    deleteHash: {
+      type: String
+    }
+  },
+  smImage: {
+    link: {
+      type: String
+    },
+    id: {
+      type: String
+    },
+    deleteHash: {
+      type: String
+    }
   },
   timestamp: {
     type: Date,

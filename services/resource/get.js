@@ -50,7 +50,7 @@ const ResourceGet = (() => {
                     type: 1,
                     tags: 1,
                     description: 1,
-                    image: 1,
+                    lgImage: 1,
                     deleteHash: 1,
                     timestamp: 1,
                     recommended_by_count: 1
@@ -258,7 +258,7 @@ const ResourceGet = (() => {
                     type: 1,
                     tags: 1,
                     description: 1,
-                    image: 1,
+                    mdImage: 1,
                     timestamp: 1,
                     recommended_by_count: 1
                   }
@@ -415,9 +415,9 @@ const ResourceGet = (() => {
   const getProfileImageByUsername = async username => {
     try {
       const user = await User.findOne({ username })
-        .select("image")
+        .select("smImage")
         .exec();
-      return { image: user.image.link };
+      return { image: user.smImage.link };
     } catch (err) {
       return {
         error: err.message

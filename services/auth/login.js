@@ -32,7 +32,7 @@ const Login = (() => {
                     token: jwtBearerToken,
                     username: user.username,
                     userId: user._id,
-                    image: user.image.link,
+                    image: user.smImage.link,
                     expiresIn: 172800000
                 }
             } else {

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Resource = require("../../models/Resource");
 const CollectionService = require("../collection/collection");
 const Imgur = require("../imgur/imgur");
+const Utility = require("../utility/Utility");
 
 const ResourceShare = (() => {
   const getOpenGraphData = async url => {
@@ -27,20 +28,37 @@ const ResourceShare = (() => {
 
   const shareResource = async data => {
     try {
-      let saveCustomImageForResourceResponse = null;
-      let image = null;
-      let deleteHash = null;
+      let response = null;
+      let sprLG = null;
+      let sprMD = null;
+      let sprSM = null;
 
       // * Handle user uploading custom image
       if (data.customImage) {
-        // * Get image link and delete hash from imgur
-        saveCustomImageForResourceResponse = await Imgur.saveImage(
-          data.customImage
-        );
-        image = saveCustomImageForResourceResponse.data.data.link;
-        deleteHash = saveCustomImageForResourceResponse.data.data.deletehash;
+        response = await Promise.all([
+          Imgur.saveImage(data.customImage, 600),
+          Imgur.saveImage(data.customImage, 200),
+          Imgur.saveImage(data.customImage, 50)
+        ]);
+
+        sprLG = response[0];
+        sprMD = response[1];
+        sprSM = response[2];
       } else {
-        image = data.formData.image;
+        // * Convert image to base64 and save to Imgur
+        let base64Image = await Utility.convertImageFromURLToBase64(
+          data.formData.image
+        );
+
+        response = await Promise.all([
+          Imgur.saveImage(base64Image, 600),
+          Imgur.saveImage(base64Image, 200),
+          Imgur.saveImage(base64Image, 50)
+        ]);
+
+        sprLG = response[0];
+        sprMD = response[1];
+        sprSM = response[2];
       }
 
       const resource = new Resource({
@@ -50,26 +68,41 @@ const ResourceShare = (() => {
         title: data.formData.title,
         type: data.formData.type,
         description: data.formData.description,
-        image: image,
-        deleteHash: deleteHash,
+        lgImage: {
+          link: sprLG.data.data.link,
+          id: sprLG.data.data.id,
+          deleteHash: sprLG.data.data.deletehash
+        },
+        mdImage: {
+          link: sprMD.data.data.link,
+          id: sprMD.data.data.id,
+          deleteHash: sprMD.data.data.deletehash
+        },
+        smImage: {
+          link: sprSM.data.data.link,
+          id: sprSM.data.data.id,
+          deleteHash: sprSM.data.data.deletehash
+        },
         tags: data.tags
       });
 
       await resource.save();
 
-      if (!data.collectionData.newCollection) {
-        await CollectionService.pushIntoCollection({
-          collectionId: data.collectionData.collectionId,
-          resourceId: resource.id,
-          username: data.formData.username
-        });
-      } else {
-        await CollectionService.createCollectionAndPushResource({
-          username: data.formData.username,
-          collectionTitle: data.collectionData.collectionName,
-          resourceId: resource.id,
-          newResource: true
-        });
+      if (data.collectionData) {
+        if (!data.collectionData.newCollection) {
+          await CollectionService.pushIntoCollection({
+            collectionId: data.collectionData.collectionId,
+            resourceId: resource.id,
+            username: data.formData.username
+          });
+        } else {
+          await CollectionService.createCollectionAndPushResource({
+            username: data.formData.username,
+            collectionTitle: data.collectionData.collectionName,
+            resourceId: resource.id,
+            newResource: true
+          });
+        }
       }
 
       return {

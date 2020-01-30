@@ -116,9 +116,15 @@ const Profile = (() => {
       // * Delete current image if any and save new image
       const response = await Promise.all([
         deleteCurrentUserImage(username),
-        Imgur.saveImage(data)
+        Imgur.saveImage(data, 600),
+        Imgur.saveImage(data, 200),
+        Imgur.saveImage(data, 50),
+        Imgur.saveImage(data, 20)
       ]);
-      const savePhotoResponse = response[1];
+      const sprLG = response[1];
+      const sprMD = response[2];
+      const sprSM = response[3];
+      const sprXS = response[4];
 
       const query = {
         _id: id
@@ -126,10 +132,25 @@ const Profile = (() => {
 
       const update = {
         $set: {
-          image: {
-            link: savePhotoResponse.data.data.link,
-            id: savePhotoResponse.data.data.id,
-            deleteHash: savePhotoResponse.data.data.deletehash
+          lgImage: {
+            link: sprLG.data.data.link,
+            id: sprLG.data.data.id,
+            deleteHash: sprLG.data.data.deletehash
+          },
+          mdImage: {
+            link: sprMD.data.data.link,
+            id: sprMD.data.data.id,
+            deleteHash: sprMD.data.data.deletehash
+          },
+          smImage: {
+            link: sprSM.data.data.link,
+            id: sprSM.data.data.id,
+            deleteHash: sprSM.data.data.deletehash
+          },
+          xsImage: {
+            link: sprXS.data.data.link,
+            id: sprXS.data.data.id,
+            deleteHash: sprXS.data.data.deletehash
           }
         },
         safe: {
@@ -140,14 +161,26 @@ const Profile = (() => {
 
       await User.updateOne(query, update).exec();
       return {
-        message: {
-          error: false,
-          status: 200,
-          data: {
-            id: savePhotoResponse.data.data.id,
-            deleteHash: savePhotoResponse.data.data.deletehash,
-            link: savePhotoResponse.data.data.link
-          }
+        error: false,
+        lgImage: {
+          id: sprLG.data.data.id,
+          deleteHash: sprLG.data.data.deletehash,
+          link: sprLG.data.data.link
+        },
+        mdImage: {
+          id: sprMD.data.data.id,
+          deleteHash: sprMD.data.data.deletehash,
+          link: sprMD.data.data.link
+        },
+        smImage: {
+          id: sprSM.data.data.id,
+          deleteHash: sprSM.data.data.deletehash,
+          link: sprSM.data.data.link
+        },
+        xsImage: {
+          id: sprXS.data.data.id,
+          deleteHash: sprXS.data.data.deletehash,
+          link: sprXS.data.data.link
         }
       };
     } catch (err) {
@@ -158,15 +191,19 @@ const Profile = (() => {
     }
   };
 
-  const deleteProfilePhoto = async (id, deleteHash) => {
+  const deleteProfilePhoto = async id => {
     try {
-      const deletePhoto = axios.create({
-        headers: {
-          Authorization: `Client-ID ${process.env.CLIENT_ID}`
-        }
-      });
+      const user = await User.findById(id)
+        .select("lgImage mdImage smImage xsImage")
+        .exec();
 
-      await deletePhoto.delete(`${process.env.IMAGE_DELETE_URL}/${deleteHash}`);
+      // * Delete profile photos (different sizes)
+      await Promise.all([
+        Imgur.deleteImage(user.lgImage.deleteHash),
+        Imgur.deleteImage(user.mdImage.deleteHash),
+        Imgur.deleteImage(user.smImage.deleteHash),
+        Imgur.deleteImage(user.xsImage.deleteHash)
+      ]);  
 
       const query = {
         _id: id
@@ -174,7 +211,22 @@ const Profile = (() => {
 
       const update = {
         $set: {
-          image: {
+          lgImage: {
+            link: null,
+            id: null,
+            deleteHash: null
+          },
+          mdImage: {
+            link: null,
+            id: null,
+            deleteHash: null
+          },
+          smImage: {
+            link: null,
+            id: null,
+            deleteHash: null
+          },
+          xsImage: {
             link: null,
             id: null,
             deleteHash: null
@@ -207,10 +259,10 @@ const Profile = (() => {
       const user = await User.findOne({
         username: username
       })
-        .select("image")
+        .select("mdImage")
         .exec();
       return {
-        image: user
+        mdImage: user.mdImage
       };
     } catch (err) {
       return {
@@ -280,12 +332,18 @@ const Profile = (() => {
       const user = await User.findOne({
         username
       })
-        .select("image")
+        .select("lgImage mdImage smImage xsImage")
         .exec();
 
-      if (user && user.image) {
+      if (user && user.lgImage) {
         // * Delete image from imgur
-        await Imgur.deleteImage(user.image.deleteHash);
+        await Promise.all([
+          Imgur.deleteImage(user.lgImage.deleteHash),
+          Imgur.deleteImage(user.mdImage.deleteHash),
+          Imgur.deleteImage(user.smImage.deleteHash),
+          Imgur.deleteImage(user.xsImage.deleteHash)
+        ]);
+
         return true;
       }
 
@@ -582,7 +640,10 @@ const Profile = (() => {
 
       // Resource only
       if (query.charAt(0) === "#") {
-        const searchResult = await ResourceService.searchResources(query, options);
+        const searchResult = await ResourceService.searchResources(
+          query,
+          options
+        );
         return {
           resourceOnly: true,
           resources: searchResult.resources
@@ -614,26 +675,30 @@ const Profile = (() => {
   const getFollowersFollowing = async username => {
     try {
       let followersFollowing = {
-          followers: [],
-          following: []
-      };  
+        followers: [],
+        following: []
+      };
       const currentUser = await User.findOne({ username })
         .select("followers following")
         .exec();
       for (const user of currentUser.followers) {
         if (user !== username) {
-            let temp = await User.findOne({username: user}).select('name username image').exec();
-            followersFollowing.followers.push(temp);
+          let temp = await User.findOne({ username: user })
+            .select("name username image")
+            .exec();
+          followersFollowing.followers.push(temp);
         }
       }
 
       for (const user of currentUser.following) {
         if (user !== username) {
-            let temp = await User.findOne({username: user}).select('name username image').exec();
-            followersFollowing.following.push(temp);
+          let temp = await User.findOne({ username: user })
+            .select("name username image")
+            .exec();
+          followersFollowing.following.push(temp);
         }
       }
-      
+
       return followersFollowing;
     } catch (err) {
       console.error(err);
