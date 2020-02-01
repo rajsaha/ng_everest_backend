@@ -8,7 +8,7 @@ const DeleteResource = (() => {
             const resource = await _Resource.findById(data.id).exec();
             if (resource) {
                 // * Delete image, find and remove resource, clear resource id in collection if any
-                await Promise.all([
+                const response = await Promise.all([
                     Imgur.deleteImage(resource.lgImage.deleteHash),
                     Imgur.deleteImage(resource.mdImage.deleteHash), 
                     Imgur.deleteImage(resource.smImage.deleteHash),
@@ -37,7 +37,7 @@ const DeleteResource = (() => {
     const findOneAndRemove = async (data) => {
         try {
             const response = await _Resource.findOneAndRemove({
-                _id: data.id
+                _id: data
             }).exec();
             
             if (response) {
