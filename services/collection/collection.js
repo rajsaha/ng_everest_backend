@@ -50,7 +50,7 @@ const Collection = (() => {
           collectionWithImages.push({
             id: collection.id,
             title: collection.title,
-            image: result.image ? result.image : ""
+            image: result.smImage ? result.smImage : ""
           });
         } else {
           collectionWithImages.push({
