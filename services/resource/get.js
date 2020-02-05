@@ -3,7 +3,7 @@ const User = require("../../models/User");
 const mongoose = require("mongoose");
 
 const selectFields =
-  "_id username title description image url timestamp tags recommended_by_count type";
+  "_id username title description smImage.link url timestamp tags recommended_by_count type";
 
 const ResourceGet = (() => {
   const getAllResources = async data => {

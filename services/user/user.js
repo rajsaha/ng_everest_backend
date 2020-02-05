@@ -3,9 +3,8 @@ const Resource = require("../../models/Resource");
 const ResourceService = require("../resource/get");
 const CollectionService = require("../collection/collection");
 const Imgur = require("../imgur/imgur");
-const axios = require("axios");
 const bcryptjs = require("bcryptjs");
-const selectFields = "name username image.link";
+const selectFields = "name username smImage.link";
 
 const Profile = (() => {
   const getProfileData = async username => {
