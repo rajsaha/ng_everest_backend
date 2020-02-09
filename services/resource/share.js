@@ -37,7 +37,7 @@ const ResourceShare = (() => {
       if (data.customImage) {
         response = await Promise.all([
           Imgur.saveImage(data.customImage, 600),
-          Imgur.saveImage(data.customImage, 200),
+          Imgur.saveImage(data.customImage, 275),
           Imgur.saveImage(data.customImage, 50)
         ]);
 
@@ -52,7 +52,7 @@ const ResourceShare = (() => {
 
         response = await Promise.all([
           Imgur.saveImage(base64Image, 600),
-          Imgur.saveImage(base64Image, 200),
+          Imgur.saveImage(base64Image, 275),
           Imgur.saveImage(base64Image, 50)
         ]);
 

@@ -206,7 +206,8 @@ const Collection = (() => {
       // * Create new collection
       const collection = new _Collection({
         username: data.username,
-        title: data.collectionTitle
+        title: data.collectionTitle,
+        description: data.description
       });
 
       await collection.save();
