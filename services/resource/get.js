@@ -406,7 +406,7 @@ const ResourceGet = (() => {
     return new Promise((resolve, reject) => {
       const result = _Resource
         .findById(resourceId)
-        .select("mdImage smImage")
+        .select("mdImage smImage lgImage")
         .exec();
       resolve(result);
     });
