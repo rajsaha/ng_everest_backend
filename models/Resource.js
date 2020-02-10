@@ -11,6 +11,10 @@ var CommentSchema = new mongoose.Schema({
   timestamp: {
     type: Date,
     default: Date.now
+  },
+  image: {
+    type: String,
+    trim: true
   }
 });
 var ResourceSchema = new mongoose.Schema({

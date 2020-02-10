@@ -157,6 +157,7 @@ const EditResource = (() => {
             const comment = {
                 username: data.username,
                 content: data.comment,
+                image: data.smImage,
                 timestamp: Date.now()
             };
 
