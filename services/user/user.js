@@ -17,12 +17,68 @@ const Profile = (() => {
           password: 0
         }
       ).exec();
+
+      // * Get followers images
+      let followers = user.followers ? user.followers : [];
+      let followerObjects = [];
+
+      for (let i = 0; i < followers.length; i++) {
+        // * if index is 4, end loop
+        if (i === 4) {
+          return;
+        }
+
+        if (followers[i] !== username) {
+          let temp = await User.findOne({ username: followers[i] })
+            .select("smImage username name")
+            .exec();
+          followerObjects.push(temp);
+        }
+      }
+
+      const userResourceTypeCountObj = await getUserResourceTypeCount(username);
       return {
-        userData: user
+        userData: user,
+        followersCount: followers.length,
+        followers: followerObjects,
+        articleCount: userResourceTypeCountObj.articleCount,
+        extContentCount: userResourceTypeCountObj.extContentCount
       };
     } catch (err) {
       return {
         error: err.message
+      };
+    }
+  };
+
+  const getUserResourceTypeCount = async username => {
+    try {
+      const resources = await Resource.find({ username: username })
+        .select("type")
+        .exec();
+
+      let articleCount = 0;
+      let extContentCount = 0;
+
+      for (let resource of resources) {
+        if (resource.type === "article") {
+          articleCount++;
+        }
+
+        if (resource.type === "ext-content") {
+          extContentCount++;
+        }
+      }
+
+      return {
+        articleCount,
+        extContentCount
+      }
+    } catch (err) {
+      console.error(err);
+      return {
+        status: 500,
+        error: error.message
       };
     }
   };
@@ -202,7 +258,7 @@ const Profile = (() => {
         Imgur.deleteImage(user.mdImage.deleteHash),
         Imgur.deleteImage(user.smImage.deleteHash),
         Imgur.deleteImage(user.xsImage.deleteHash)
-      ]);  
+      ]);
 
       const query = {
         _id: id
@@ -602,6 +658,45 @@ const Profile = (() => {
     }
   };
 
+  const getFollowersFollowing = async username => {
+    try {
+      let followersFollowing = {
+        followers: [],
+        following: []
+      };
+      const currentUser = await User.findOne({ username })
+        .select("followers following")
+        .exec();
+      for (const user of currentUser.followers) {
+        if (user !== username) {
+          let temp = await User.findOne({ username: user })
+            .select("name username image")
+            .exec();
+          followersFollowing.followers.push(temp);
+        }
+      }
+
+      for (const user of currentUser.following) {
+        if (user !== username) {
+          let temp = await User.findOne({ username: user })
+            .select("name username image")
+            .exec();
+          followersFollowing.following.push(temp);
+        }
+      }
+
+      return followersFollowing;
+    } catch (err) {
+      console.error(err);
+      return {
+        status: 500,
+        error: error.message
+      };
+    }
+  };
+
+  // ! End of functions related to following and unfollowing users
+
   const globalUserSearch = async (query, options) => {
     try {
       // ! If user isn't selected
@@ -670,45 +765,6 @@ const Profile = (() => {
       };
     }
   };
-
-  const getFollowersFollowing = async username => {
-    try {
-      let followersFollowing = {
-        followers: [],
-        following: []
-      };
-      const currentUser = await User.findOne({ username })
-        .select("followers following")
-        .exec();
-      for (const user of currentUser.followers) {
-        if (user !== username) {
-          let temp = await User.findOne({ username: user })
-            .select("name username image")
-            .exec();
-          followersFollowing.followers.push(temp);
-        }
-      }
-
-      for (const user of currentUser.following) {
-        if (user !== username) {
-          let temp = await User.findOne({ username: user })
-            .select("name username image")
-            .exec();
-          followersFollowing.following.push(temp);
-        }
-      }
-
-      return followersFollowing;
-    } catch (err) {
-      console.error(err);
-      return {
-        status: 500,
-        error: error.message
-      };
-    }
-  };
-
-  // ! End of functions related to following and unfollowing users
 
   return {
     getProfileData,
