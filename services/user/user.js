@@ -39,7 +39,7 @@ const Profile = (() => {
       const userResourceTypeCountObj = await getUserResourceTypeCount(username);
       return {
         userData: user,
-        followersCount: followers.length,
+        followersCount: followers.length - 1,
         followers: followerObjects,
         articleCount: userResourceTypeCountObj.articleCount,
         extContentCount: userResourceTypeCountObj.extContentCount
