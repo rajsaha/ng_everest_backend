@@ -18,25 +18,17 @@ const Profile = (() => {
         }
       ).exec();
 
+      const userResourceTypeCountObj = await getUserResourceTypeCount(username);
+
       // * Get followers images
       let followers = user.followers ? user.followers : [];
-      let followerObjects = [];
 
-      for (let i = 0; i < followers.length; i++) {
-        // * if index is 4, end loop
-        if (i === 4) {
-          return;
-        }
+      const followerObjects = await User.find({
+        username: { $in: [...followers] }
+      })
+        .select("smImage username name")
+        .exec();
 
-        if (followers[i] !== username) {
-          let temp = await User.findOne({ username: followers[i] })
-            .select("smImage username name")
-            .exec();
-          followerObjects.push(temp);
-        }
-      }
-
-      const userResourceTypeCountObj = await getUserResourceTypeCount(username);
       return {
         userData: user,
         followersCount: followers.length - 1,
@@ -73,7 +65,7 @@ const Profile = (() => {
       return {
         articleCount,
         extContentCount
-      }
+      };
     } catch (err) {
       console.error(err);
       return {
