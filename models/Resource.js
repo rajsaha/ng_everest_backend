@@ -2,6 +2,8 @@ var mongoose = require("mongoose");
 var ResourceSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Types.ObjectId,
+    required: true,
+    ref: "User",
     trim: true
   },
   url: {

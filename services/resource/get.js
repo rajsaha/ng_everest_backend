@@ -34,35 +34,11 @@ const ResourceGet = (() => {
         $in: [...followingArray]
       };
 
-      // const pipeline = [
-      //   {
-      //     $match: {
-      //       userId: query.username
-      //     }
-      //   },
-      //   {
-      //     $sort: {
-      //       timestamp: -1
-      //     }
-      //   },
-      //   {
-      //     $skip: query.skip
-      //   },
-      //   {
-      //     $limit: query.limit
-      //   },
-      //   {
-      //     $lookup: {
-      //       from: ""
-      //     }
-      //   }
-      // ];
-
       const resources = await _Resource
         .aggregate([
           {
             $lookup: {
-              from: "User",
+              from: "users",
               localField: "userId",
               foreignField: "_id",
               as: "user"
@@ -84,7 +60,10 @@ const ResourceGet = (() => {
                 {
                   $project: {
                     _id: 1,
-                    username: 1,
+                    username: "$user.username",
+                    userImage: "$user.smImage.link",
+                    firstName: "$user.firstName",
+                    lastName: "$user.lastName",
                     url: 1,
                     title: 1,
                     type: 1,

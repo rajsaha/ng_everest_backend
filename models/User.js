@@ -77,19 +77,6 @@ var UserSchema = new mongoose.Schema({
         type: [String],
         trim: true
     }],
-    collections: [{
-        title: String,
-        resources: [String]
-    }],
-    followers: {
-        type: [String],
-        default: 'everest'
-    },
-    following: {
-        type: [String],
-        default: 'everest'
-    },
-    recommends: [String],
     score: {
         type: Number,
         default: 0

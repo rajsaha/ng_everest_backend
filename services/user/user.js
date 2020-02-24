@@ -13,35 +13,47 @@ const selectFields = "name username smImage.link";
 const Profile = (() => {
   const getProfileData = async username => {
     try {
-      const user = await User.aggregate({
-        $match: {
-          username: username
-        },
-        $lookup: {
-          from: "User",
-          localField: ""
-        },
-        $project: {
-          _id: 1,
-          name: 1,
-          username: 1,
-          mdImage: 1,
-          smImage: 1,
-          bio: 1,
-          website: 1,
-          interests: 1,
-          followers: 1,
-          following: 1,
-          followersCount: {
-            $size: "$followers"
+      const user = await User.aggregate([
+        {
+          $lookup: {
+            from: "followings",
+            localField: "_id",
+            foreignField: "anchorUserId",
+            as: "following"
           },
-          followingCount: {
-            $size: "$following"
+          $lookup: {
+            from: "followers",
+            localField: "_id",
+            foreignField: "anchorUserId",
+            as: "follower"
+          }
+        },
+        {
+          $match: {
+            username: username
+          },
+          $project: {
+            _id: 1,
+            name: 1,
+            username: 1,
+            mdImage: 1,
+            smImage: 1,
+            bio: 1,
+            website: 1,
+            interests: 1,
+            followers: 1,
+            following: 1,
+            followersCount: {
+              $size: "$follower"
+            },
+            followingCount: {
+              $size: "$following"
+            }
           }
         }
-      });
+      ]).exec();
 
-      // const userResourceTypeCountObj = await getUserResourceTypeCount(username);
+      const userResourceTypeCountObj = await getUserResourceTypeCount(username);
 
       // // * Get followers images
       // let followers = user.followers ? user.followers : [];
@@ -52,13 +64,11 @@ const Profile = (() => {
       //   .select("smImage username name")
       //   .exec();
 
-      // return {
-      //   userData: user,
-      //   followersCount: followers.length,
-      //   followers: followerObjects,
-      //   articleCount: userResourceTypeCountObj.articleCount,
-      //   extContentCount: userResourceTypeCountObj.extContentCount
-      // };
+      return {
+        userData: user,
+        articleCount: userResourceTypeCountObj.articleCount,
+        extContentCount: userResourceTypeCountObj.extContentCount
+      };
     } catch (err) {
       return {
         error: err.message
