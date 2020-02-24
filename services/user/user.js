@@ -1,5 +1,9 @@
+// Models
 const User = require("../../models/User");
 const Resource = require("../../models/Resource");
+const Following = require("../../models/Following");
+
+// Services
 const ResourceService = require("../resource/get");
 const CollectionService = require("../collection/collection");
 const Imgur = require("../imgur/imgur");
@@ -9,33 +13,52 @@ const selectFields = "name username smImage.link";
 const Profile = (() => {
   const getProfileData = async username => {
     try {
-      const user = await User.findOne(
-        {
+      const user = await User.aggregate({
+        $match: {
           username: username
         },
-        {
-          password: 0
+        $lookup: {
+          from: "User",
+          localField: ""
+        },
+        $project: {
+          _id: 1,
+          name: 1,
+          username: 1,
+          mdImage: 1,
+          smImage: 1,
+          bio: 1,
+          website: 1,
+          interests: 1,
+          followers: 1,
+          following: 1,
+          followersCount: {
+            $size: "$followers"
+          },
+          followingCount: {
+            $size: "$following"
+          }
         }
-      ).exec();
+      });
 
-      const userResourceTypeCountObj = await getUserResourceTypeCount(username);
+      // const userResourceTypeCountObj = await getUserResourceTypeCount(username);
 
-      // * Get followers images
-      let followers = user.followers ? user.followers : [];
+      // // * Get followers images
+      // let followers = user.followers ? user.followers : [];
 
-      const followerObjects = await User.find({
-        username: { $in: [...followers] }
-      })
-        .select("smImage username name")
-        .exec();
+      // const followerObjects = await User.find({
+      //   username: { $in: [...followers] }
+      // })
+      //   .select("smImage username name")
+      //   .exec();
 
-      return {
-        userData: user,
-        followersCount: followers.length - 1,
-        followers: followerObjects,
-        articleCount: userResourceTypeCountObj.articleCount,
-        extContentCount: userResourceTypeCountObj.extContentCount
-      };
+      // return {
+      //   userData: user,
+      //   followersCount: followers.length,
+      //   followers: followerObjects,
+      //   articleCount: userResourceTypeCountObj.articleCount,
+      //   extContentCount: userResourceTypeCountObj.extContentCount
+      // };
     } catch (err) {
       return {
         error: err.message
@@ -526,42 +549,13 @@ const Profile = (() => {
   // * Functions related to following and unfollowing users
   const followUser = async data => {
     try {
-      const query = {
-        username: data.currentUser
-      };
-      const update = {
-        $push: {
-          following: data.username
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
+      const following = new Following({
+        anchorUserId: data.anchorUserId,
+        userId: data.anchorUserId
+      });
 
-      const query2 = {
-        username: data.username
-      };
-
-      const update2 = {
-        $push: {
-          followers: data.currentUser
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
-
-      const response = await Promise.all([
-        User.findOneAndUpdate(query, update).exec(),
-        User.findOneAndUpdate(query2, update2).exec()
-      ]);
-
-      if (response[0] && response[1]) {
-        return true;
-      }
-      return false;
+      await following.save();
+      return true;
     } catch (err) {
       return {
         error: err.message
@@ -571,42 +565,12 @@ const Profile = (() => {
 
   const unfollowUser = async data => {
     try {
-      const query = {
-        username: data.currentUser
-      };
-      const update = {
-        $pull: {
-          following: data.username
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
+      await Following.findOneAndDelete({
+        anchorUserId: data.anchorUserId,
+        userId: data.userId
+      });
 
-      const query2 = {
-        username: data.username
-      };
-
-      const update2 = {
-        $pull: {
-          followers: data.currentUser
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
-
-      const response = await Promise.all([
-        User.findOneAndUpdate(query, update).exec(),
-        User.findOneAndUpdate(query2, update2).exec()
-      ]);
-
-      if (response[0] && response[1]) {
-        return true;
-      }
-      return false;
+      return true;
     } catch (err) {
       return {
         error: err.message

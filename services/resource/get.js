@@ -1,5 +1,8 @@
+// Models
 const _Resource = require("../../models/Resource");
 const User = require("../../models/User");
+const Following = require("../../models/Following");
+
 const mongoose = require("mongoose");
 
 const selectFields =
@@ -9,8 +12,13 @@ const ResourceGet = (() => {
   const getAllResources = async data => {
     try {
       // Get users that current logged in user follows
-      const followers = await getUserFollowers(data.username);
+      const following = await getUserFollowers(data.userId);
+      let followingArray = [];
 
+      for (let user of following.following) {
+        followingArray.push(user.anchorUserId);
+      }
+      
       // Set up pagination
       const pageNo = parseInt(data.pageNo);
       const size = parseInt(data.size);
@@ -23,11 +31,43 @@ const ResourceGet = (() => {
       query.skip = size * (pageNo - 1);
       query.limit = size;
       query.username = {
-        $in: [...followers.following.following]
+        $in: [...followingArray]
       };
+
+      // const pipeline = [
+      //   {
+      //     $match: {
+      //       userId: query.username
+      //     }
+      //   },
+      //   {
+      //     $sort: {
+      //       timestamp: -1
+      //     }
+      //   },
+      //   {
+      //     $skip: query.skip
+      //   },
+      //   {
+      //     $limit: query.limit
+      //   },
+      //   {
+      //     $lookup: {
+      //       from: ""
+      //     }
+      //   }
+      // ];
 
       const resources = await _Resource
         .aggregate([
+          {
+            $lookup: {
+              from: "User",
+              localField: "userId",
+              foreignField: "_id",
+              as: "user"
+            }
+          },
           {
             $facet: {
               resources: [
@@ -38,7 +78,7 @@ const ResourceGet = (() => {
                 },
                 {
                   $match: {
-                    username: query.username
+                    userId: query.username
                   }
                 },
                 {
@@ -67,7 +107,7 @@ const ResourceGet = (() => {
               count: [
                 {
                   $match: {
-                    username: query.username
+                    userId: query.username
                   }
                 },
                 {
@@ -82,6 +122,8 @@ const ResourceGet = (() => {
         ])
         .exec();
 
+        console.log(resources);
+
       return {
         resources: resources[0].resources,
         count: resources[0].count[0].count
@@ -93,11 +135,9 @@ const ResourceGet = (() => {
     }
   };
 
-  const getUserFollowers = async username => {
+  const getUserFollowers = async anchorUserId => {
     try {
-      const following = await User.findOne({ username })
-        .select("following")
-        .exec();
+      const following = await Following.find({ anchorUserId }).select("anchorUserId").exec();
       if (following) {
         return {
           following

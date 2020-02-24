@@ -3,7 +3,11 @@ const bcryptjs = require('bcryptjs');
 
 var UserSchema = new mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    name: {
+    firstName: {
+        type: String,
+        trim: true
+    },
+    lastName: {
         type: String,
         trim: true
     },

@@ -63,7 +63,7 @@ const ResourceShare = (() => {
 
       const resource = new Resource({
         _id: new mongoose.Types.ObjectId(),
-        username: data.formData.username,
+        userId: data.formData.userId,
         url: data.formData.url,
         title: data.formData.title,
         type: data.formData.type,

@@ -1,25 +1,7 @@
 var mongoose = require("mongoose");
-var CommentSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    trim: true
-  },
-  content: {
-    type: String,
-    trim: true
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now
-  },
-  image: {
-    type: String,
-    trim: true
-  }
-});
 var ResourceSchema = new mongoose.Schema({
-  username: {
-    type: String,
+  userId: {
+    type: mongoose.Types.ObjectId,
     trim: true
   },
   url: {
@@ -83,7 +65,6 @@ var ResourceSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  comments: [CommentSchema],
   recommended_by_count: {
     type: Number,
     default: 0

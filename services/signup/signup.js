@@ -11,7 +11,9 @@ const Signup = (() => {
                     _id: new mongoose.Types.ObjectId(),
                     email: data.email,
                     username: data.username,
-                    password: data.password
+                    password: data.password,
+                    firstName: data.firstName,
+                    lastName: data.lastName
                 });
 
                 try {
@@ -20,8 +22,8 @@ const Signup = (() => {
 
                     // Add self to follow list
                     await UserService.followUser({
-                        currentUser: data.username,
-                        username: data.username
+                        anchorUserId: user._id,
+                        currentUser: user._id
                     });
                     return {
                         status: 200,
