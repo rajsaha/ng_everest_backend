@@ -54,43 +54,19 @@ const Profile = (() => {
             },
             interests: 1,
             following: {
-              $cond: [
-                {
-                  $isArray: "$following"
-                },
-                "$following",
-                []
-              ]
+              $ifNull: ["$following", []]
             },
             followers: {
-              $cond: [
-                {
-                  $isArray: "$follower"
-                },
-                "$follower",
-                []
-              ]
+              $ifNull: ["$follower", []]
             },
             followersCount: {
               $size: {
-                $cond: [
-                  {
-                    $isArray: "$follower"
-                  },
-                  "$follower",
-                  []
-                ]
+                $ifNull: ["$follower", []]
               }
             },
             followingCount: {
               $size: {
-                $cond: [
-                  {
-                    $isArray: "$following"
-                  },
-                  "$following",
-                  []
-                ]
+                $ifNull: ["$following", []]
               }
             }
           }
