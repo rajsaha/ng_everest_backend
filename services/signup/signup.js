@@ -22,8 +22,8 @@ const Signup = (() => {
 
                     // Add self to follow list
                     await UserService.followUser({
-                        anchorUserId: user._id,
-                        currentUser: user._id
+                        anchorUserId: user.id,
+                        userId: user.id
                     });
                     return {
                         status: 200,

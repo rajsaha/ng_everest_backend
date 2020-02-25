@@ -4,6 +4,7 @@ const User = require("../../models/User");
 const Following = require("../../models/Following");
 
 const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 
 const selectFields =
   "_id username title description smImage.link url timestamp tags recommended_by_count type";
@@ -16,7 +17,7 @@ const ResourceGet = (() => {
       let followingArray = [];
 
       for (let user of following.following) {
-        followingArray.push(user.anchorUserId);
+        followingArray.push(ObjectId(user.userId));
       }
       
       // Set up pagination
@@ -30,7 +31,7 @@ const ResourceGet = (() => {
       }
       query.skip = size * (pageNo - 1);
       query.limit = size;
-      query.username = {
+      query.userIds = {
         $in: [...followingArray]
       };
 
@@ -54,7 +55,7 @@ const ResourceGet = (() => {
                 },
                 {
                   $match: {
-                    userId: query.username
+                    userId: query.userIds
                   }
                 },
                 {
@@ -86,7 +87,7 @@ const ResourceGet = (() => {
               count: [
                 {
                   $match: {
-                    userId: query.username
+                    userId: query.userIds
                   }
                 },
                 {
@@ -101,8 +102,6 @@ const ResourceGet = (() => {
         ])
         .exec();
 
-        console.log(resources);
-
       return {
         resources: resources[0].resources,
         count: resources[0].count[0].count
@@ -116,7 +115,7 @@ const ResourceGet = (() => {
 
   const getUserFollowers = async anchorUserId => {
     try {
-      const following = await Following.find({ anchorUserId }).select("anchorUserId").exec();
+      const following = await Following.find({ anchorUserId }).select("userId").exec();
       if (following) {
         return {
           following
@@ -257,6 +256,14 @@ const ResourceGet = (() => {
       const resources = await _Resource
         .aggregate([
           {
+            $lookup: {
+              from: "users",
+              localField: "userId",
+              foreignField: "_id",
+              as: "user"
+            }
+          },
+          {
             $facet: {
               resources: [
                 {
@@ -266,13 +273,13 @@ const ResourceGet = (() => {
                 },
                 {
                   $match: {
-                    username: data.username
+                    userId: ObjectId(data.userId)
                   }
                 },
                 {
                   $project: {
                     _id: 1,
-                    username: 1,
+                    userId: 1,
                     url: 1,
                     title: 1,
                     type: 1,
@@ -293,7 +300,7 @@ const ResourceGet = (() => {
               count: [
                 {
                   $match: {
-                    username: data.username
+                    userId: ObjectId(data.userId)
                   }
                 },
                 {
@@ -307,6 +314,8 @@ const ResourceGet = (() => {
           }
         ])
         .exec();
+
+        console.log(resources);
 
       return {
         resources: resources[0].resources,

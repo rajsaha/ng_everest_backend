@@ -31,23 +31,67 @@ const Profile = (() => {
         {
           $match: {
             username: username
-          },
+          }
+        },
+        {
           $project: {
             _id: 1,
-            name: 1,
+            firstName: 1,
+            lastName: 1,
             username: 1,
-            mdImage: 1,
-            smImage: 1,
-            bio: 1,
-            website: 1,
+            email: 1,
+            mdImage: {
+              $ifNull: ["$mdImage", null]
+            },
+            smImage: {
+              $ifNull: ["$smImage", null]
+            },
+            bio: {
+              $ifNull: ["$bio", ""]
+            },
+            website: {
+              $ifNull: ["$website", ""]
+            },
             interests: 1,
-            followers: 1,
-            following: 1,
+            following: {
+              $cond: [
+                {
+                  $isArray: "$following"
+                },
+                "$following",
+                []
+              ]
+            },
+            followers: {
+              $cond: [
+                {
+                  $isArray: "$follower"
+                },
+                "$follower",
+                []
+              ]
+            },
             followersCount: {
-              $size: "$follower"
+              $size: {
+                $cond: [
+                  {
+                    $isArray: "$follower"
+                  },
+                  "$follower",
+                  []
+                ]
+              }
             },
             followingCount: {
-              $size: "$following"
+              $size: {
+                $cond: [
+                  {
+                    $isArray: "$following"
+                  },
+                  "$following",
+                  []
+                ]
+              }
             }
           }
         }
@@ -65,7 +109,7 @@ const Profile = (() => {
       //   .exec();
 
       return {
-        userData: user,
+        userData: user[0],
         articleCount: userResourceTypeCountObj.articleCount,
         extContentCount: userResourceTypeCountObj.extContentCount
       };
@@ -127,35 +171,37 @@ const Profile = (() => {
   };
 
   const updateProfileData = async data => {
-    const _id = data.id;
-    const name = data.name || "";
-    const website = data.website || "";
-    const bio = data.bio || "";
-    const email = data.email || "";
-    const interests = data.interests || [];
-
-    const query = {
-      _id: _id
-    };
-    const update = {
-      $set: {
-        name: name,
-        website: website,
-        bio: bio,
-        email: email
-      },
-      $addToSet: {
-        interests: {
-          $each: interests
-        }
-      },
-      safe: {
-        new: true,
-        upsert: true
-      }
-    };
-
     try {
+      const _id = data.id;
+      const firstName = data.firstName ? data.firstName : "";
+      const lastName = data.lastName ? data.lastName : "";
+      const website = data.website || "";
+      const bio = data.bio || "";
+      const email = data.email || "";
+      const interests = data.interests || [];
+
+      const query = {
+        _id: _id
+      };
+      const update = {
+        $set: {
+          firstName: firstName,
+          lastName: lastName,
+          website: website,
+          bio: bio,
+          email: email
+        },
+        $addToSet: {
+          interests: {
+            $each: interests
+          }
+        },
+        safe: {
+          new: true,
+          upsert: true
+        }
+      };
+
       const user = await User.updateOne(query, update).exec();
       return {
         message: "User details updated"
@@ -561,7 +607,7 @@ const Profile = (() => {
     try {
       const following = new Following({
         anchorUserId: data.anchorUserId,
-        userId: data.anchorUserId
+        userId: data.userId
       });
 
       await following.save();
@@ -590,9 +636,9 @@ const Profile = (() => {
 
   const checkIfUserIsFollowed = async data => {
     try {
-      const response = await User.find({
-        username: data.currentUser,
-        following: data.username
+      const response = await Following.find({
+        anchorUserId: data.anchorUserId,
+        userId: data.userId
       });
       if (response.length > 0) {
         return true;
