@@ -13,6 +13,21 @@ const bcryptjs = require("bcryptjs");
 const selectFields = "name username smImage.link";
 
 const Profile = (() => {
+  const getUserId = async username => {
+    try {
+      const user = await User.findOne({ username: username }).exec();
+      let id = null;
+      if (user) {
+        id = user._id;
+      }
+
+      return id;
+    } catch (err) {
+      return {
+        error: err.message
+      };
+    }
+  }
   const getProfileData = async userId => {
     try {
       const user = await User.aggregate([
@@ -58,10 +73,22 @@ const Profile = (() => {
               $ifNull: ["$website", ""]
             },
             followingCount: {
-              $ifNull: [{ $size: "$following" }, []]
+              $size: {
+                $cond: [
+                  { $isArray: "$following"},
+                  "$following",
+                  []
+                ]
+              }
             },
             followerCount: {
-              $ifNull: [{ $size: "$follower" }, []]
+              $size: {
+                $cond: [
+                  { $isArray: "$follower"},
+                  "$follower",
+                  []
+                ]
+              }
             },
             interests: 1
           }
@@ -125,8 +152,9 @@ const Profile = (() => {
 
   const getPublicProfile = async data => {
     try {
+      const userId = await getUserId(data.username);
       const result = await Promise.all([
-        getProfileData(data.username),
+        getProfileData(userId),
         CollectionService.getCollections(data.username)
       ]);
 
