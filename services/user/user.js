@@ -29,6 +29,9 @@ const Profile = (() => {
           }
         },
         {
+          $unwind: "$following"
+        },
+        {
           $match: {
             username: username
           }
