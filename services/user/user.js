@@ -2,6 +2,7 @@
 const User = require("../../models/User");
 const Resource = require("../../models/Resource");
 const Following = require("../../models/Following");
+const Follower = require("../../models/Follower");
 
 // Services
 const mongoose = require("mongoose");
@@ -27,7 +28,7 @@ const Profile = (() => {
         error: err.message
       };
     }
-  }
+  };
   const getProfileData = async userId => {
     try {
       const user = await User.aggregate([
@@ -37,16 +38,15 @@ const Profile = (() => {
             localField: "_id",
             foreignField: "anchorUserId",
             as: "follower"
-          },
+          }
+        },
+        {
           $lookup: {
             from: "followings",
             localField: "_id",
             foreignField: "anchorUserId",
             as: "following"
           }
-        },
-        {
-          $unwind: "$following"
         },
         {
           $match: {
@@ -74,21 +74,19 @@ const Profile = (() => {
             },
             followingCount: {
               $size: {
-                $cond: [
-                  { $isArray: "$following"},
-                  "$following",
-                  []
-                ]
+                $cond: [{ $isArray: "$following" }, "$following", []]
               }
             },
             followerCount: {
               $size: {
-                $cond: [
-                  { $isArray: "$follower"},
-                  "$follower",
-                  []
-                ]
+                $cond: [{ $isArray: "$follower" }, "$follower", []]
               }
+            },
+            following: {
+              $slice: ["$following", 0, 4]
+            },
+            followers: {
+              $slice: ["$follower", 0, 4]
             },
             interests: 1
           }
@@ -97,19 +95,27 @@ const Profile = (() => {
 
       const userResourceTypeCountObj = await getUserResourceTypeCount(userId);
 
-      // // * Get followers images
-      // let followers = user.followers ? user.followers : [];
+      // * Get followers images
+      let followers = user[0].followers ? user[0].followers : [];
+      let followerIds = [];
 
-      // const followerObjects = await User.find({
-      //   username: { $in: [...followers] }
-      // })
-      //   .select("smImage username name")
-      //   .exec();
+
+      for (let item of followers) {
+        followerIds.push(item.userId);
+      }
+
+      const followerObjects = await User.find({
+        _id: { $in: [...followerIds] }
+      })
+        .select("smImage username name")
+        .limit(4)
+        .exec();
 
       return {
         userData: user[0],
         articleCount: userResourceTypeCountObj.articleCount,
-        extContentCount: userResourceTypeCountObj.extContentCount
+        extContentCount: userResourceTypeCountObj.extContentCount,
+        followerObjects: followerObjects
       };
     } catch (err) {
       return {
@@ -609,7 +615,13 @@ const Profile = (() => {
         userId: data.userId
       });
 
-      await following.save();
+      const follower = new Follower({
+        anchorUserId: data.userId,
+        userId: data.anchorUserId
+      });
+
+      await Promise.all([following.save(), follower.save()]);
+
       return true;
     } catch (err) {
       return {
