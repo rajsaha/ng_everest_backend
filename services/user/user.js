@@ -4,6 +4,8 @@ const Resource = require("../../models/Resource");
 const Following = require("../../models/Following");
 
 // Services
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 const ResourceService = require("../resource/get");
 const CollectionService = require("../collection/collection");
 const Imgur = require("../imgur/imgur");
@@ -11,21 +13,21 @@ const bcryptjs = require("bcryptjs");
 const selectFields = "name username smImage.link";
 
 const Profile = (() => {
-  const getProfileData = async username => {
+  const getProfileData = async userId => {
     try {
       const user = await User.aggregate([
         {
-          $lookup: {
-            from: "followings",
-            localField: "_id",
-            foreignField: "anchorUserId",
-            as: "following"
-          },
           $lookup: {
             from: "followers",
             localField: "_id",
             foreignField: "anchorUserId",
             as: "follower"
+          },
+          $lookup: {
+            from: "followings",
+            localField: "_id",
+            foreignField: "anchorUserId",
+            as: "following"
           }
         },
         {
@@ -33,7 +35,7 @@ const Profile = (() => {
         },
         {
           $match: {
-            username: username
+            _id: ObjectId(userId)
           }
         },
         {
@@ -55,28 +57,18 @@ const Profile = (() => {
             website: {
               $ifNull: ["$website", ""]
             },
-            interests: 1,
-            following: {
-              $ifNull: ["$following", []]
-            },
-            followers: {
-              $ifNull: ["$follower", []]
-            },
-            followersCount: {
-              $size: {
-                $ifNull: ["$follower", []]
-              }
-            },
             followingCount: {
-              $size: {
-                $ifNull: ["$following", []]
-              }
-            }
+              $ifNull: [{ $size: "$following" }, []]
+            },
+            followerCount: {
+              $ifNull: [{ $size: "$follower" }, []]
+            },
+            interests: 1
           }
         }
       ]).exec();
 
-      const userResourceTypeCountObj = await getUserResourceTypeCount(username);
+      const userResourceTypeCountObj = await getUserResourceTypeCount(userId);
 
       // // * Get followers images
       // let followers = user.followers ? user.followers : [];
@@ -99,9 +91,9 @@ const Profile = (() => {
     }
   };
 
-  const getUserResourceTypeCount = async username => {
+  const getUserResourceTypeCount = async userId => {
     try {
-      const resources = await Resource.find({ username: username })
+      const resources = await Resource.find({ userId: userId })
         .select("type")
         .exec();
 

@@ -3,9 +3,9 @@ const router = express.Router();
 const User = require('../../../services/user/user');
 const checkIfAuthenticated = require('../../../services/auth/checkIfAuthorized');
 
-router.get('/get-user-data/:username', checkIfAuthenticated, async (req, res, next) => {
+router.post('/get-user-data', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await User.getProfileData(req.params.username);
+        const response = await User.getProfileData(req.body.userId);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
