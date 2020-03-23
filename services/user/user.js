@@ -3,6 +3,7 @@ const User = require("../../models/User");
 const Resource = require("../../models/Resource");
 const Following = require("../../models/Following");
 const Follower = require("../../models/Follower");
+const Recommend = require("../../models/Recommend");
 
 // Services
 const mongoose = require("mongoose");
@@ -489,24 +490,37 @@ const Profile = (() => {
   // * Functions related to liking and unliking posts
   const likePost = async data => {
     try {
-      const query = {
-        username: data.username
-      };
-      const update = {
-        $push: {
-          recommends: data.resourceId
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
+      const recommend = new Recommend({
+        resourceId: data.resourceId,
+        userId: data.userId
+      });
 
       const response = await Promise.all([
-        User.findOneAndUpdate(query, update).exec(),
+        recommend.save(),
         incrementResourceLikeCount(data.resourceId)
       ]);
 
+      if (response[0] && response[1]) {
+        return true;
+      }
+      return false;
+    } catch (err) {
+      return {
+        error: err.message
+      };
+    }
+  };
+
+  const unlikePost = async data => {
+    try {
+      const unlikeAction = Recommend.deleteOne({
+        resourceId: data.resourceId,
+        userId: data.userId
+      });
+      const response = await Promise.all([
+        unlikeAction.exec(),
+        decrementResourceLikeCount(data.resourceId)
+      ]);
       if (response[0] && response[1]) {
         return true;
       }
@@ -543,26 +557,6 @@ const Profile = (() => {
     }
   };
 
-  const unlikePost = async data => {
-    try {
-      const response = await Promise.all([
-        User.updateOne(
-          { username: data.username },
-          { $pull: { recommends: data.resourceId } }
-        ).exec(),
-        decrementResourceLikeCount(data.resourceId)
-      ]);
-      if (response[0] && response[1]) {
-        return true;
-      }
-      return false;
-    } catch (err) {
-      return {
-        error: err.message
-      };
-    }
-  };
-
   const decrementResourceLikeCount = async resourceId => {
     try {
       const query = {
@@ -590,9 +584,9 @@ const Profile = (() => {
 
   const checkIfPostIsLiked = async data => {
     try {
-      const response = await User.find({
-        username: data.username,
-        recommends: data.resourceId
+      const response = await Recommend.find({
+        userId: data.userId,
+        resourceId: data.resourceId
       });
       if (response.length > 0) {
         return true;

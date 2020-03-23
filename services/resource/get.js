@@ -1,9 +1,10 @@
 // Models
+const mongoose = require("mongoose");
 const _Resource = require("../../models/Resource");
 const User = require("../../models/User");
 const Following = require("../../models/Following");
+const Comment = require("../../models/Comment");
 
-const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 
 const selectFields =
@@ -143,25 +144,22 @@ const ResourceGet = (() => {
       query.skip = size * (pageNo - 1);
       query.limit = size;
 
-      const comments = await _Resource
+      const comments = await Comment
         .aggregate([
           {
             $facet: {
               comments: [
                 {
                   $match: {
-                    _id: mongoose.Types.ObjectId(data.resourceId)
+                    resourceId: mongoose.Types.ObjectId(data.resourceId)
                   }
                 },
                 {
-                  $unwind: "$comments"
-                },
-                {
                   $project: {
-                    username: "$comments.username",
-                    content: "$comments.content",
-                    timestamp: "$comments.timestamp",
-                    _id: 0
+                    username: 1,
+                    content: 1,
+                    timestamp: 1,
+                    image: 1
                   }
                 },
                 {
@@ -179,11 +177,8 @@ const ResourceGet = (() => {
               count: [
                 {
                   $match: {
-                    _id: mongoose.Types.ObjectId(data.resourceId)
+                    resourceId: mongoose.Types.ObjectId(data.resourceId)
                   }
-                },
-                {
-                  $unwind: "$comments"
                 },
                 {
                   $group: {
@@ -210,14 +205,11 @@ const ResourceGet = (() => {
 
   const getResourceCommentsCount = async resourceId => {
     try {
-      const commentCount = await _Resource.aggregate([
+      const commentCount = await Comment.aggregate([
         {
           $match: {
-            _id: mongoose.Types.ObjectId(resourceId)
+            resourceId: mongoose.Types.ObjectId(resourceId)
           }
-        },
-        {
-          $unwind: "$comments"
         },
         {
           $group: {

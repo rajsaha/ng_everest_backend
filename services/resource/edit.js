@@ -1,4 +1,6 @@
+const mongoose = require("mongoose");
 const _Resource = require("../../models/Resource");
+const Comment = require("../../models/Comment");
 const CollectionService = require("../collection/collection");
 const Imgur = require("../imgur/imgur");
 
@@ -231,27 +233,16 @@ const EditResource = (() => {
 
   const addComment = async data => {
     try {
-      const query = {
-        _id: data.resourceId
-      };
-
-      const comment = {
+      const comment = new Comment({
+        _id: new mongoose.Types.ObjectId(),
+        resourceId: data.resourceId,
         username: data.username,
         content: data.comment,
+        timestamp: Date.now(),
         image: data.smImage,
-        timestamp: Date.now()
-      };
+      });
 
-      const update = {
-        $push: {
-          comments: comment
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
-      const response = await _Resource.findOneAndUpdate(query, update).exec();
+      const response = await comment.save();
 
       if (response) {
         return {
