@@ -9,6 +9,14 @@ var CommentSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  firstName: {
+    type: String,
+    trim: true
+  },
+  lastName: {
+    type: String,
+    trim: true
+  },
   content: {
     type: String,
     trim: true

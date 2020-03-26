@@ -237,6 +237,8 @@ const EditResource = (() => {
         _id: new mongoose.Types.ObjectId(),
         resourceId: data.resourceId,
         username: data.username,
+        firstName: data.firstName,
+        lastName: data.lastName,
         content: data.comment,
         timestamp: Date.now(),
         image: data.smImage,

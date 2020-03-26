@@ -157,6 +157,8 @@ const ResourceGet = (() => {
                 {
                   $project: {
                     username: 1,
+                    firstName: 1,
+                    lastName: 1,
                     content: 1,
                     timestamp: 1,
                     image: 1
@@ -192,9 +194,14 @@ const ResourceGet = (() => {
         ])
         .exec();
 
+      let count = 0;
+      if (comments[0].count.length > 0) {
+        count = comments[0].count[0].count
+      }  
+
       return {
         comments: comments[0].comments,
-        count: comments[0].count[0].count
+        count
       };
     } catch (err) {
       return {
