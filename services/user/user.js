@@ -62,10 +62,10 @@ const Profile = (() => {
             username: 1,
             email: 1,
             mdImage: {
-              $ifNull: ["$mdImage", null]
+              $ifNull: ["$mdImage", ""]
             },
             smImage: {
-              $ifNull: ["$smImage", null]
+              $ifNull: ["$smImage", ""]
             },
             bio: {
               $ifNull: ["$bio", ""]
@@ -105,12 +105,23 @@ const Profile = (() => {
         followerIds.push(item.userId);
       }
 
-      const followerObjects = await User.find({
-        _id: { $in: [...followerIds] }
-      })
-        .select("smImage username name")
-        .limit(4)
-        .exec();
+      const followerObjects = await User.aggregate([
+        {
+          $match: {
+            _id: { $in: [...followerIds] }
+          }
+        },
+        {
+          $project: {
+            smImage: {
+              $ifNull: ["$smImage.link", ""]
+            },
+            username: 1,
+            firstName: 1,
+            lastName: 1
+          }
+        }
+      ]);  
 
       return {
         userData: user[0],
