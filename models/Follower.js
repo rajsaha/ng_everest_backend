@@ -1,13 +1,14 @@
 var mongoose = require("mongoose");
 var FollowerSchema = new mongoose.Schema({
   anchorUserId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-  },   
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    trim: true
+    ref: "User",
+    required: true
   },
   timestamp: {
     type: Date,
