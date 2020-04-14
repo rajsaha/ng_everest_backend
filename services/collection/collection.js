@@ -234,6 +234,13 @@ const Collection = (() => {
         };
       }
 
+      if (data.currentCollectionId) {
+        await deleteResourceFromCollection({
+          collectionId: data.currentCollectionId,
+          resourceId: data.resourceId
+        });
+      }
+
       // * Create new collection
       const collection = new _Collection({
         username: data.username,
