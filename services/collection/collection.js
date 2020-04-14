@@ -78,6 +78,13 @@ const Collection = (() => {
                     resource2: { $arrayElemAt: ["$resources", 1] },
                     resource3: { $arrayElemAt: ["$resources", 2] },
                     resource4: { $arrayElemAt: ["$resources", 3] },
+                    count: {
+                      $cond: {
+                        if: { $isArray: "$resources" },
+                        then: { $size: "$resources" },
+                        else: "0",
+                      },
+                    },
                   },
                 },
                 {
@@ -237,7 +244,7 @@ const Collection = (() => {
       if (data.currentCollectionId) {
         await deleteResourceFromCollection({
           collectionId: data.currentCollectionId,
-          resourceId: data.resourceId
+          resourceId: data.resourceId,
         });
       }
 
