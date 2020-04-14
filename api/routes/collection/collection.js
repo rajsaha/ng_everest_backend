@@ -5,7 +5,7 @@ const checkIfAuthenticated = require('../../../services/auth/checkIfAuthorized')
 
 router.post('/get-collections', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await Collection.getCollections(req.body.username);
+        const response = await Collection.getCollections(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
