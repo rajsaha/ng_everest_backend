@@ -37,8 +37,85 @@ const Collection = (() => {
       query.skip = size * (pageNo - 1);
       query.limit = size;
 
-      const collections = await _Collection
-        .aggregate([
+      let aggregateArray = [];
+      console.log(data);
+
+      if ("resourceId" in data) {
+        aggregateArray = [
+          {
+            $lookup: {
+              from: "collectionresources",
+              localField: "_id",
+              foreignField: "anchorCollectionId",
+              as: "collectionResource",
+            },
+          },
+          {
+            $lookup: {
+              from: "resources",
+              localField: "collectionResource.resourceId",
+              foreignField: "_id",
+              as: "resources",
+            },
+          },
+          {
+            $facet: {
+              collections: [
+                {
+                  $sort: {
+                    timestamp: -1,
+                  },
+                },
+                {
+                  $match: {
+                    username: data.username,
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    title: 1,
+                    description: 1,
+                    timestamp: 1,
+                    resource1: { $arrayElemAt: ["$resources", 0] },
+                    count: {
+                      $cond: {
+                        if: { $isArray: "$resources" },
+                        then: { $size: "$resources" },
+                        else: "0",
+                      },
+                    },
+                    inThisCollection: {
+                      $filter: {
+                        input: "$resources",
+                        as: "re",
+                        cond: {
+                          $eq: ["$$re._id", mongoose.Types.ObjectId(data.resourceId)]
+                        }
+                      }
+                    },
+                  },
+                },
+                {
+                  $skip: query.skip,
+                },
+                {
+                  $limit: query.limit,
+                },
+              ],
+              count: [
+                {
+                  $group: {
+                    _id: 0,
+                    count: { $sum: 1 },
+                  },
+                },
+              ],
+            },
+          },
+        ];
+      } else {
+        aggregateArray = [
           {
             $lookup: {
               from: "collectionresources",
@@ -104,8 +181,10 @@ const Collection = (() => {
               ],
             },
           },
-        ])
-        .exec();
+        ];
+      }
+
+      const collections = await _Collection.aggregate(aggregateArray).exec();
 
       return {
         error: false,
