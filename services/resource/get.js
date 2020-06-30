@@ -11,7 +11,7 @@ const selectFields =
   "_id username title description smImage.link url timestamp tags recommended_by_count type";
 
 const ResourceGet = (() => {
-  const getAllResources = async data => {
+  const getAllResources = async (data) => {
     try {
       // Get users that current logged in user follows
       const following = await getUserFollowers(data.userId);
@@ -20,20 +20,20 @@ const ResourceGet = (() => {
       for (let user of following.following) {
         followingArray.push(ObjectId(user.userId));
       }
-      
+
       // Set up pagination
       const pageNo = parseInt(data.pageNo);
       const size = parseInt(data.size);
       let query = {};
       if (pageNo < 0 || pageNo === 0) {
         return {
-          error: "Invalid page number"
+          error: "Invalid page number",
         };
       }
       query.skip = size * (pageNo - 1);
       query.limit = size;
       query.userIds = {
-        $in: [...followingArray]
+        $in: [...followingArray],
       };
 
       const resources = await _Resource
@@ -43,21 +43,21 @@ const ResourceGet = (() => {
               from: "users",
               localField: "userId",
               foreignField: "_id",
-              as: "user"
-            }
+              as: "user",
+            },
           },
           {
             $facet: {
               resources: [
                 {
                   $sort: {
-                    timestamp: -1
-                  }
+                    timestamp: -1,
+                  },
                 },
                 {
                   $match: {
-                    userId: query.userIds
-                  }
+                    userId: query.userIds,
+                  },
                 },
                 {
                   $project: {
@@ -75,62 +75,64 @@ const ResourceGet = (() => {
                     smImage: 1,
                     deleteHash: 1,
                     timestamp: 1,
-                    recommended_by_count: 1
-                  }
+                    recommended_by_count: 1,
+                  },
                 },
                 {
-                  $skip: query.skip
+                  $skip: query.skip,
                 },
                 {
-                  $limit: query.limit
-                }
+                  $limit: query.limit,
+                },
               ],
               count: [
                 {
                   $match: {
-                    userId: query.userIds
-                  }
+                    userId: query.userIds,
+                  },
                 },
                 {
                   $group: {
                     _id: 0,
-                    count: { $sum: 1 }
-                  }
-                }
-              ]
-            }
-          }
+                    count: { $sum: 1 },
+                  },
+                },
+              ],
+            },
+          },
         ])
         .exec();
 
       return {
         resources: resources[0].resources,
-        count: resources[0].count[0].count
+        count: resources[0].count[0].count,
       };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const getUserFollowers = async anchorUserId => {
+  const getUserFollowers = async (anchorUserId) => {
     try {
-      const following = await Following.find({ anchorUserId }).select("userId").exec();
+      const following = await Following.find({ anchorUserId })
+        .select("userId")
+        .exec();
       if (following) {
         return {
-          following
+          following,
         };
       }
       return false;
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const getResourceComments = async data => {
+  const getResourceComments = async (data) => {
     try {
       // Set up pagination
       const pageNo = parseInt(data.pageNo);
@@ -138,92 +140,90 @@ const ResourceGet = (() => {
       let query = {};
       if (pageNo < 0 || pageNo === 0) {
         return {
-          error: "Invalid page number"
+          error: "Invalid page number",
         };
       }
       query.skip = size * (pageNo - 1);
       query.limit = size;
 
-      const comments = await Comment
-        .aggregate([
-          {
-            $facet: {
-              comments: [
-                {
-                  $match: {
-                    resourceId: mongoose.Types.ObjectId(data.resourceId)
-                  }
+      const comments = await Comment.aggregate([
+        {
+          $facet: {
+            comments: [
+              {
+                $match: {
+                  resourceId: mongoose.Types.ObjectId(data.resourceId),
                 },
-                {
-                  $project: {
-                    username: 1,
-                    firstName: 1,
-                    lastName: 1,
-                    content: 1,
-                    timestamp: 1,
-                    image: 1
-                  }
+              },
+              {
+                $project: {
+                  username: 1,
+                  firstName: 1,
+                  lastName: 1,
+                  content: 1,
+                  timestamp: 1,
+                  image: 1,
                 },
-                {
-                  $skip: query.skip
+              },
+              {
+                $skip: query.skip,
+              },
+              {
+                $limit: query.limit,
+              },
+              {
+                $sort: {
+                  timestamp: 1,
                 },
-                {
-                  $limit: query.limit
+              },
+            ],
+            count: [
+              {
+                $match: {
+                  resourceId: mongoose.Types.ObjectId(data.resourceId),
                 },
-                {
-                  $sort: {
-                    timestamp: 1
-                  }
-                }
-              ],
-              count: [
-                {
-                  $match: {
-                    resourceId: mongoose.Types.ObjectId(data.resourceId)
-                  }
+              },
+              {
+                $group: {
+                  _id: 0,
+                  count: { $sum: 1 },
                 },
-                {
-                  $group: {
-                    _id: 0,
-                    count: { $sum: 1 }
-                  }
-                }
-              ]
-            }
-          }
-        ])
-        .exec();
+              },
+            ],
+          },
+        },
+      ]).exec();
 
       let count = 0;
       if (comments[0].count.length > 0) {
-        count = comments[0].count[0].count
-      }  
+        count = comments[0].count[0].count;
+      }
 
       return {
         comments: comments[0].comments,
-        count
+        count,
       };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const getResourceCommentsCount = async resourceId => {
+  const getResourceCommentsCount = async (resourceId) => {
     try {
       const commentCount = await Comment.aggregate([
         {
           $match: {
-            resourceId: mongoose.Types.ObjectId(resourceId)
-          }
+            resourceId: mongoose.Types.ObjectId(resourceId),
+          },
         },
         {
           $group: {
             _id: 0,
-            count: { $sum: 1 }
-          }
-        }
+            count: { $sum: 1 },
+          },
+        },
       ]);
 
       if (commentCount[0]) {
@@ -233,12 +233,12 @@ const ResourceGet = (() => {
       }
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const getUserResources = async data => {
+  const getUserResources = async (data) => {
     try {
       // Set up pagination
       const pageNo = parseInt(data.pageNo);
@@ -246,7 +246,7 @@ const ResourceGet = (() => {
       let query = {};
       if (pageNo < 0 || pageNo === 0) {
         return {
-          error: "Invalid page number"
+          error: "Invalid page number",
         };
       }
       query.skip = size * (pageNo - 1);
@@ -259,21 +259,21 @@ const ResourceGet = (() => {
               from: "users",
               localField: "userId",
               foreignField: "_id",
-              as: "user"
-            }
+              as: "user",
+            },
           },
           {
             $facet: {
               resources: [
                 {
                   $sort: {
-                    timestamp: -1
-                  }
+                    timestamp: -1,
+                  },
                 },
                 {
                   $match: {
-                    userId: ObjectId(data.userId)
-                  }
+                    userId: ObjectId(data.userId),
+                  },
                 },
                 {
                   $project: {
@@ -286,65 +286,96 @@ const ResourceGet = (() => {
                     description: 1,
                     mdImage: 1,
                     timestamp: 1,
-                    recommended_by_count: 1
-                  }
+                    recommended_by_count: 1,
+                  },
                 },
                 {
-                  $skip: query.skip
+                  $skip: query.skip,
                 },
                 {
-                  $limit: query.limit
-                }
+                  $limit: query.limit,
+                },
               ],
               count: [
                 {
                   $match: {
-                    userId: ObjectId(data.userId)
-                  }
+                    userId: ObjectId(data.userId),
+                  },
                 },
                 {
                   $group: {
                     _id: 0,
-                    count: { $sum: 1 }
-                  }
-                }
-              ]
-            }
-          }
+                    count: { $sum: 1 },
+                  },
+                },
+              ],
+            },
+          },
         ])
         .exec();
 
-        console.log(resources);
+      console.log(resources);
 
       return {
         resources: resources[0].resources,
-        count: resources[0].count[0].count
+        count: resources[0].count[0].count,
       };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const getResource = async data => {
+  const getResource = async (data) => {
     try {
-      const resource = await _Resource.findById(data).exec();
+      const resource = await _Resource.aggregate([
+        {
+          $match: { _id: ObjectId(data) },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            username: "$user.username",
+            userImage: "$user.smImage.link",
+            firstName: "$user.firstName",
+            lastName: "$user.lastName",
+            url: 1,
+            title: 1,
+            type: 1,
+            tags: 1,
+            description: 1,
+            lgImage: 1,
+            smImage: 1,
+            deleteHash: 1,
+            timestamp: 1,
+            recommended_by_count: 1,
+          },
+        },
+      ]);
       return {
-        resource: resource
+        resource: resource[0],
       };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const getMultipleResources = async data => {
+  const getMultipleResources = async (data) => {
     try {
       const resources = await _Resource
         .find({
-          _id: { $in: [...getQueries(data)] }
+          _id: { $in: [...getQueries(data)] },
         })
         .sort({ timestamp: -1 })
         .exec();
@@ -358,16 +389,16 @@ const ResourceGet = (() => {
       }
 
       return {
-        resources
+        resources,
       };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const getMonthName = month => {
+  const getMonthName = (month) => {
     const monthNames = [
       "January",
       "February",
@@ -380,31 +411,31 @@ const ResourceGet = (() => {
       "September",
       "October",
       "November",
-      "December"
+      "December",
     ];
 
     return monthNames[month];
   };
 
-  const getCollectionResources = async data => {
+  const getCollectionResources = async (data) => {
     try {
       const resources = await _Resource
         .find({
-          _id: { $in: [...getQueries(data)] }
+          _id: { $in: [...getQueries(data)] },
         })
         .sort({ timestamp: -1 })
         .exec();
       return {
-        resources
+        resources,
       };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const getQueries = data => {
+  const getQueries = (data) => {
     let mongooseQueryArray = [];
     for (let resource of data) {
       mongooseQueryArray.push(mongoose.Types.ObjectId(resource.resourceId));
@@ -412,7 +443,7 @@ const ResourceGet = (() => {
     return mongooseQueryArray;
   };
 
-  const getFourImages = async data => {
+  const getFourImages = async (data) => {
     try {
       let images = [];
       let promises = [];
@@ -421,11 +452,11 @@ const ResourceGet = (() => {
       }
       images = await Promise.all(promises);
       return {
-        images
+        images,
       };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
@@ -440,15 +471,13 @@ const ResourceGet = (() => {
     });
   }
 
-  const getProfileImageByUsername = async username => {
+  const getProfileImageByUsername = async (username) => {
     try {
-      const user = await User.findOne({ username })
-        .select("smImage")
-        .exec();
+      const user = await User.findOne({ username }).select("smImage").exec();
       return { image: user.smImage.link };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
@@ -482,11 +511,11 @@ const ResourceGet = (() => {
           .limit(10)
           .sort({
             recommended_by_count: recommend ? -1 : 1,
-            timestamp: recent ? -1 : 1
+            timestamp: recent ? -1 : 1,
           })
           .exec();
         return {
-          resources
+          resources,
         };
       }
 
@@ -495,20 +524,20 @@ const ResourceGet = (() => {
         .limit(10)
         .sort({
           recommended_by_count: recommend ? -1 : 1,
-          timestamp: recent ? -1 : 1
+          timestamp: recent ? -1 : 1,
         })
         .exec();
       return {
-        resources
+        resources,
       };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const searchUserResources = async data => {
+  const searchUserResources = async (data) => {
     try {
       let query = data.query;
       if (query.charAt(0) === "#") {
@@ -519,13 +548,13 @@ const ResourceGet = (() => {
           .find(
             {
               username: data.username,
-              tags: { $in: regex }
+              tags: { $in: regex },
             },
             selectFields
           )
           .exec();
         return {
-          resources
+          resources,
         };
       }
 
@@ -533,17 +562,17 @@ const ResourceGet = (() => {
         .find(
           {
             username: data.username,
-            title: { $regex: `${query}`, $options: "i" }
+            title: { $regex: `${query}`, $options: "i" },
           },
           selectFields
         )
         .exec();
       return {
-        resources
+        resources,
       };
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
@@ -559,7 +588,7 @@ const ResourceGet = (() => {
     getFourImages,
     getProfileImageByUsername,
     searchUserResources,
-    searchResources
+    searchResources,
   };
 })();
 
