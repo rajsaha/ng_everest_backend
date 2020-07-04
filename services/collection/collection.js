@@ -38,7 +38,6 @@ const Collection = (() => {
       query.limit = size;
 
       let aggregateArray = [];
-      console.log(data);
 
       if ("resourceId" in data) {
         aggregateArray = [
@@ -74,6 +73,7 @@ const Collection = (() => {
                 {
                   $project: {
                     _id: 1,
+                    username: 1,
                     title: 1,
                     description: 1,
                     timestamp: 1,
@@ -90,9 +90,12 @@ const Collection = (() => {
                         input: "$resources",
                         as: "re",
                         cond: {
-                          $eq: ["$$re._id", mongoose.Types.ObjectId(data.resourceId)]
-                        }
-                      }
+                          $eq: [
+                            "$$re._id",
+                            mongoose.Types.ObjectId(data.resourceId),
+                          ],
+                        },
+                      },
                     },
                   },
                 },
@@ -148,6 +151,7 @@ const Collection = (() => {
                 {
                   $project: {
                     _id: 1,
+                    username: 1,
                     title: 1,
                     description: 1,
                     timestamp: 1,
@@ -234,11 +238,89 @@ const Collection = (() => {
     }
   };
 
-  const getCollectionById = async (id) => {
+  const getCollectionById = async (data) => {
     try {
-      const collection = await _Collection.findById(id).exec();
+      // Set up pagination
+      const pageNo = parseInt(data.pageNo);
+      const size = parseInt(data.size);
+      let query = {};
+      if (pageNo < 0 || pageNo === 0) {
+        return {
+          error: "Invalid page number",
+        };
+      }
+      query.skip = size * (pageNo - 1);
+      query.limit = size;
+      
+      const collection = await _Collection
+        .aggregate([
+          {
+            $lookup: {
+              from: "collectionresources",
+              localField: "_id",
+              foreignField: "anchorCollectionId",
+              as: "collectionResource",
+            },
+          },
+          {
+            $lookup: {
+              from: "resources",
+              localField: "collectionResource.resourceId",
+              foreignField: "_id",
+              as: "resources",
+            },
+          },
+          {
+            $facet: {
+              collection: [
+                {
+                  $sort: {
+                    timestamp: -1,
+                  },
+                },
+                {
+                  $match: {
+                    _id: mongoose.Types.ObjectId(data.id),
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    title: 1,
+                    description: 1,
+                    image: 1,
+                    timestamp: 1,
+                    resources: "$resources",
+                    count: {
+                      $cond: {
+                        if: { $isArray: "$resources" },
+                        then: { $size: "$resources" },
+                        else: "0",
+                      },
+                    },
+                  },
+                },
+                {
+                  $skip: query.skip,
+                },
+                {
+                  $limit: query.limit,
+                },
+              ],
+              count: [
+                {
+                  $group: {
+                    _id: 0,
+                    count: { $sum: 1 },
+                  },
+                },
+              ],
+            },
+          },
+        ])
+        .exec();
       return {
-        collection: collection,
+        collection: collection[0],
       };
     } catch (err) {
       return {

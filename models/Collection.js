@@ -15,6 +15,11 @@ var CollectionSchema = new mongoose.Schema({
         required: false,
         trim: true
     },
+    image: {
+        type: String,
+        required: false,
+        trim: true
+    },
     timestamp: {
         type: Date,
         default: Date.now
