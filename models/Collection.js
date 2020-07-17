@@ -10,27 +10,19 @@ var CollectionSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    resources: [{
-        type: [String],
-        trim: true,
-        unique: true
-    }],
+    description: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    image: {
+        type: String,
+        required: false,
+        trim: true
+    },
     timestamp: {
         type: Date,
         default: Date.now
-    },
-    comments: [{
-        username: String,
-        content: String,
-        timestamp: {
-            type: Date,
-            default: Date.now
-        }
-    }],
-    recommended_by: [String],
-    recommended_by_count: {
-        type: Number,
-        default: 0
     }
 });
 

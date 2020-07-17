@@ -1,25 +1,133 @@
+// Models
 const User = require("../../models/User");
 const Resource = require("../../models/Resource");
+const Following = require("../../models/Following");
+const Follower = require("../../models/Follower");
+const Recommend = require("../../models/Recommend");
+
+// Services
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 const ResourceService = require("../resource/get");
 const CollectionService = require("../collection/collection");
 const Imgur = require("../imgur/imgur");
-const axios = require("axios");
 const bcryptjs = require("bcryptjs");
-const selectFields = "name username image.link";
+const selectFields = "name username smImage.link";
 
 const Profile = (() => {
-  const getProfileData = async username => {
+  const getUserId = async username => {
     try {
-      const user = await User.findOne(
+      const user = await User.findOne({ username: username }).exec();
+      let id = null;
+      if (user) {
+        id = user._id;
+      }
+
+      return id;
+    } catch (err) {
+      return {
+        error: err.message
+      };
+    }
+  };
+  const getProfileData = async userId => {
+    try {
+      const user = await User.aggregate([
         {
-          username: username
+          $lookup: {
+            from: "followers",
+            localField: "_id",
+            foreignField: "anchorUserId",
+            as: "follower"
+          }
         },
         {
-          password: 0
+          $lookup: {
+            from: "followings",
+            localField: "_id",
+            foreignField: "anchorUserId",
+            as: "following"
+          }
+        },
+        {
+          $match: {
+            _id: ObjectId(userId)
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            firstName: 1,
+            lastName: 1,
+            username: 1,
+            email: 1,
+            mdImage: {
+              $ifNull: ["$mdImage", ""]
+            },
+            smImage: {
+              $ifNull: ["$smImage", ""]
+            },
+            bio: {
+              $ifNull: ["$bio", ""]
+            },
+            website: {
+              $ifNull: ["$website", ""]
+            },
+            followingCount: {
+              $size: {
+                $cond: [{ $isArray: "$following" }, "$following", []]
+              }
+            },
+            followerCount: {
+              $size: {
+                $cond: [{ $isArray: "$follower" }, "$follower", []]
+              }
+            },
+            following: {
+              $slice: ["$following", 0, 4]
+            },
+            followers: {
+              $slice: ["$follower", 0, 4]
+            },
+            interests: 1
+          }
         }
-      ).exec();
+      ]).exec();
+
+      const userResourceTypeCountObj = await getUserResourceTypeCount(userId);
+
+      // * Get followers images
+      let followers = user[0].followers ? user[0].followers : [];
+      let followerIds = [];
+
+
+      for (let item of followers) {
+        followerIds.push(item.userId);
+      }
+
+      const followerObjects = await User.aggregate([
+        {
+          $match: {
+            _id: { $in: [...followerIds] }
+          }
+        },
+        {
+          $project: {
+            smImage: {
+              $ifNull: ["$smImage.link", ""]
+            },
+            username: 1,
+            firstName: 1,
+            lastName: 1
+          }
+        }
+      ]);  
+
       return {
-        userData: user
+        userData: user[0],
+        articleCount: userResourceTypeCountObj.articleCount,
+        extContentCount: userResourceTypeCountObj.extContentCount,
+        followerObjects: followerObjects
       };
     } catch (err) {
       return {
@@ -28,10 +136,43 @@ const Profile = (() => {
     }
   };
 
+  const getUserResourceTypeCount = async userId => {
+    try {
+      const resources = await Resource.find({ userId: userId })
+        .select("type")
+        .exec();
+
+      let articleCount = 0;
+      let extContentCount = 0;
+
+      for (let resource of resources) {
+        if (resource.type === "article") {
+          articleCount++;
+        }
+
+        if (resource.type === "ext-content") {
+          extContentCount++;
+        }
+      }
+
+      return {
+        articleCount,
+        extContentCount
+      };
+    } catch (err) {
+      console.error(err);
+      return {
+        status: 500,
+        error: error.message
+      };
+    }
+  };
+
   const getPublicProfile = async data => {
     try {
+      const userId = await getUserId(data.username);
       const result = await Promise.all([
-        getProfileData(data.username),
+        getProfileData(userId),
         CollectionService.getCollections(data.username)
       ]);
 
@@ -47,35 +188,37 @@ const Profile = (() => {
   };
 
   const updateProfileData = async data => {
-    const _id = data.id;
-    const name = data.name || "";
-    const website = data.website || "";
-    const bio = data.bio || "";
-    const email = data.email || "";
-    const interests = data.interests || [];
-
-    const query = {
-      _id: _id
-    };
-    const update = {
-      $set: {
-        name: name,
-        website: website,
-        bio: bio,
-        email: email
-      },
-      $addToSet: {
-        interests: {
-          $each: interests
-        }
-      },
-      safe: {
-        new: true,
-        upsert: true
-      }
-    };
-
     try {
+      const _id = data.id;
+      const firstName = data.firstName ? data.firstName : "";
+      const lastName = data.lastName ? data.lastName : "";
+      const website = data.website || "";
+      const bio = data.bio || "";
+      const email = data.email || "";
+      const interests = data.interests || [];
+
+      const query = {
+        _id: _id
+      };
+      const update = {
+        $set: {
+          firstName: firstName,
+          lastName: lastName,
+          website: website,
+          bio: bio,
+          email: email
+        },
+        $addToSet: {
+          interests: {
+            $each: interests
+          }
+        },
+        safe: {
+          new: true,
+          upsert: true
+        }
+      };
+
       const user = await User.updateOne(query, update).exec();
       return {
         message: "User details updated"
@@ -116,9 +259,15 @@ const Profile = (() => {
       // * Delete current image if any and save new image
       const response = await Promise.all([
         deleteCurrentUserImage(username),
-        Imgur.saveImage(data)
+        Imgur.saveImage(data, 600),
+        Imgur.saveImage(data, 200),
+        Imgur.saveImage(data, 50),
+        Imgur.saveImage(data, 20)
       ]);
-      const savePhotoResponse = response[1];
+      const sprLG = response[1];
+      const sprMD = response[2];
+      const sprSM = response[3];
+      const sprXS = response[4];
 
       const query = {
         _id: id
@@ -126,10 +275,25 @@ const Profile = (() => {
 
       const update = {
         $set: {
-          image: {
-            link: savePhotoResponse.data.data.link,
-            id: savePhotoResponse.data.data.id,
-            deleteHash: savePhotoResponse.data.data.deletehash
+          lgImage: {
+            link: sprLG.data.data.link,
+            id: sprLG.data.data.id,
+            deleteHash: sprLG.data.data.deletehash
+          },
+          mdImage: {
+            link: sprMD.data.data.link,
+            id: sprMD.data.data.id,
+            deleteHash: sprMD.data.data.deletehash
+          },
+          smImage: {
+            link: sprSM.data.data.link,
+            id: sprSM.data.data.id,
+            deleteHash: sprSM.data.data.deletehash
+          },
+          xsImage: {
+            link: sprXS.data.data.link,
+            id: sprXS.data.data.id,
+            deleteHash: sprXS.data.data.deletehash
           }
         },
         safe: {
@@ -140,14 +304,26 @@ const Profile = (() => {
 
       await User.updateOne(query, update).exec();
       return {
-        message: {
-          error: false,
-          status: 200,
-          data: {
-            id: savePhotoResponse.data.data.id,
-            deleteHash: savePhotoResponse.data.data.deletehash,
-            link: savePhotoResponse.data.data.link
-          }
+        error: false,
+        lgImage: {
+          id: sprLG.data.data.id,
+          deleteHash: sprLG.data.data.deletehash,
+          link: sprLG.data.data.link
+        },
+        mdImage: {
+          id: sprMD.data.data.id,
+          deleteHash: sprMD.data.data.deletehash,
+          link: sprMD.data.data.link
+        },
+        smImage: {
+          id: sprSM.data.data.id,
+          deleteHash: sprSM.data.data.deletehash,
+          link: sprSM.data.data.link
+        },
+        xsImage: {
+          id: sprXS.data.data.id,
+          deleteHash: sprXS.data.data.deletehash,
+          link: sprXS.data.data.link
         }
       };
     } catch (err) {
@@ -158,15 +334,19 @@ const Profile = (() => {
     }
   };
 
-  const deleteProfilePhoto = async (id, deleteHash) => {
+  const deleteProfilePhoto = async id => {
     try {
-      const deletePhoto = axios.create({
-        headers: {
-          Authorization: `Client-ID ${process.env.CLIENT_ID}`
-        }
-      });
+      const user = await User.findById(id)
+        .select("lgImage mdImage smImage xsImage")
+        .exec();
 
-      await deletePhoto.delete(`${process.env.IMAGE_DELETE_URL}/${deleteHash}`);
+      // * Delete profile photos (different sizes)
+      await Promise.all([
+        Imgur.deleteImage(user.lgImage.deleteHash),
+        Imgur.deleteImage(user.mdImage.deleteHash),
+        Imgur.deleteImage(user.smImage.deleteHash),
+        Imgur.deleteImage(user.xsImage.deleteHash)
+      ]);
 
       const query = {
         _id: id
@@ -174,7 +354,22 @@ const Profile = (() => {
 
       const update = {
         $set: {
-          image: {
+          lgImage: {
+            link: null,
+            id: null,
+            deleteHash: null
+          },
+          mdImage: {
+            link: null,
+            id: null,
+            deleteHash: null
+          },
+          smImage: {
+            link: null,
+            id: null,
+            deleteHash: null
+          },
+          xsImage: {
             link: null,
             id: null,
             deleteHash: null
@@ -207,10 +402,10 @@ const Profile = (() => {
       const user = await User.findOne({
         username: username
       })
-        .select("image")
+        .select("mdImage")
         .exec();
       return {
-        image: user
+        mdImage: user.mdImage
       };
     } catch (err) {
       return {
@@ -280,12 +475,18 @@ const Profile = (() => {
       const user = await User.findOne({
         username
       })
-        .select("image")
+        .select("lgImage mdImage smImage xsImage")
         .exec();
 
-      if (user && user.image) {
+      if (user && user.lgImage) {
         // * Delete image from imgur
-        await Imgur.deleteImage(user.image.deleteHash);
+        await Promise.all([
+          Imgur.deleteImage(user.lgImage.deleteHash),
+          Imgur.deleteImage(user.mdImage.deleteHash),
+          Imgur.deleteImage(user.smImage.deleteHash),
+          Imgur.deleteImage(user.xsImage.deleteHash)
+        ]);
+
         return true;
       }
 
@@ -300,24 +501,37 @@ const Profile = (() => {
   // * Functions related to liking and unliking posts
   const likePost = async data => {
     try {
-      const query = {
-        username: data.username
-      };
-      const update = {
-        $push: {
-          recommends: data.resourceId
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
+      const recommend = new Recommend({
+        resourceId: data.resourceId,
+        userId: data.userId
+      });
 
       const response = await Promise.all([
-        User.findOneAndUpdate(query, update).exec(),
+        recommend.save(),
         incrementResourceLikeCount(data.resourceId)
       ]);
 
+      if (response[0] && response[1]) {
+        return true;
+      }
+      return false;
+    } catch (err) {
+      return {
+        error: err.message
+      };
+    }
+  };
+
+  const unlikePost = async data => {
+    try {
+      const unlikeAction = Recommend.deleteOne({
+        resourceId: data.resourceId,
+        userId: data.userId
+      });
+      const response = await Promise.all([
+        unlikeAction.exec(),
+        decrementResourceLikeCount(data.resourceId)
+      ]);
       if (response[0] && response[1]) {
         return true;
       }
@@ -354,26 +568,6 @@ const Profile = (() => {
     }
   };
 
-  const unlikePost = async data => {
-    try {
-      const response = await Promise.all([
-        User.updateOne(
-          { username: data.username },
-          { $pull: { recommends: data.resourceId } }
-        ).exec(),
-        decrementResourceLikeCount(data.resourceId)
-      ]);
-      if (response[0] && response[1]) {
-        return true;
-      }
-      return false;
-    } catch (err) {
-      return {
-        error: err.message
-      };
-    }
-  };
-
   const decrementResourceLikeCount = async resourceId => {
     try {
       const query = {
@@ -401,9 +595,9 @@ const Profile = (() => {
 
   const checkIfPostIsLiked = async data => {
     try {
-      const response = await User.find({
-        username: data.username,
-        recommends: data.resourceId
+      const response = await Recommend.find({
+        userId: data.userId,
+        resourceId: data.resourceId
       });
       if (response.length > 0) {
         return true;
@@ -421,42 +615,19 @@ const Profile = (() => {
   // * Functions related to following and unfollowing users
   const followUser = async data => {
     try {
-      const query = {
-        username: data.currentUser
-      };
-      const update = {
-        $push: {
-          following: data.username
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
+      const following = new Following({
+        anchorUserId: data.anchorUserId,
+        userId: data.userId
+      });
 
-      const query2 = {
-        username: data.username
-      };
+      const follower = new Follower({
+        anchorUserId: data.userId,
+        userId: data.anchorUserId
+      });
 
-      const update2 = {
-        $push: {
-          followers: data.currentUser
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
+      await Promise.all([following.save(), follower.save()]);
 
-      const response = await Promise.all([
-        User.findOneAndUpdate(query, update).exec(),
-        User.findOneAndUpdate(query2, update2).exec()
-      ]);
-
-      if (response[0] && response[1]) {
-        return true;
-      }
-      return false;
+      return true;
     } catch (err) {
       return {
         error: err.message
@@ -466,42 +637,12 @@ const Profile = (() => {
 
   const unfollowUser = async data => {
     try {
-      const query = {
-        username: data.currentUser
-      };
-      const update = {
-        $pull: {
-          following: data.username
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
+      await Following.findOneAndDelete({
+        anchorUserId: data.anchorUserId,
+        userId: data.userId
+      });
 
-      const query2 = {
-        username: data.username
-      };
-
-      const update2 = {
-        $pull: {
-          followers: data.currentUser
-        },
-        safe: {
-          new: true,
-          upsert: true
-        }
-      };
-
-      const response = await Promise.all([
-        User.findOneAndUpdate(query, update).exec(),
-        User.findOneAndUpdate(query2, update2).exec()
-      ]);
-
-      if (response[0] && response[1]) {
-        return true;
-      }
-      return false;
+      return true;
     } catch (err) {
       return {
         error: err.message
@@ -511,9 +652,9 @@ const Profile = (() => {
 
   const checkIfUserIsFollowed = async data => {
     try {
-      const response = await User.find({
-        username: data.currentUser,
-        following: data.username
+      const response = await Following.find({
+        anchorUserId: data.anchorUserId,
+        userId: data.userId
       });
       if (response.length > 0) {
         return true;
@@ -545,8 +686,51 @@ const Profile = (() => {
     }
   };
 
-  const globalUserSearch = async query => {
+  const getFollowersFollowing = async username => {
     try {
+      let followersFollowing = {
+        followers: [],
+        following: []
+      };
+      const currentUser = await User.findOne({ username })
+        .select("followers following")
+        .exec();
+      for (const user of currentUser.followers) {
+        if (user !== username) {
+          let temp = await User.findOne({ username: user })
+            .select("name username image")
+            .exec();
+          followersFollowing.followers.push(temp);
+        }
+      }
+
+      for (const user of currentUser.following) {
+        if (user !== username) {
+          let temp = await User.findOne({ username: user })
+            .select("name username image")
+            .exec();
+          followersFollowing.following.push(temp);
+        }
+      }
+
+      return followersFollowing;
+    } catch (err) {
+      console.error(err);
+      return {
+        status: 500,
+        error: error.message
+      };
+    }
+  };
+
+  // ! End of functions related to following and unfollowing users
+
+  const globalUserSearch = async (query, options) => {
+    try {
+      // ! If user isn't selected
+      if (!options.user) {
+        return;
+      }
       const users = await User.find(
         {
           $or: [
@@ -571,19 +755,28 @@ const Profile = (() => {
     }
   };
 
-  const globalSearch = async query => {
+  const globalSearch = async data => {
     try {
+      const query = decodeURIComponent(data.query);
+      const options = data.options;
+
+      // Resource only
       if (query.charAt(0) === "#") {
-        const searchResult = await ResourceService.searchResources(query);
+        const searchResult = await ResourceService.searchResources(
+          query,
+          options
+        );
         return {
           resourceOnly: true,
-          resources: searchResult[0]
+          resources: searchResult.resources
         };
       }
+
+      // All types
       const searchResult = await Promise.all([
-        globalUserSearch(query),
-        ResourceService.searchResources(query),
-        CollectionService.searchCollections(query)
+        globalUserSearch(query, options),
+        ResourceService.searchResources(query, options),
+        CollectionService.searchCollections(query, options)
       ]);
 
       return {
@@ -600,41 +793,6 @@ const Profile = (() => {
       };
     }
   };
-
-  const getFollowersFollowing = async username => {
-    try {
-      let followersFollowing = {
-          followers: [],
-          following: []
-      };  
-      const currentUser = await User.findOne({ username })
-        .select("followers following")
-        .exec();
-      for (const user of currentUser.followers) {
-        if (user !== username) {
-            let temp = await User.findOne({username: user}).select('name username image').exec();
-            followersFollowing.followers.push(temp);
-        }
-      }
-
-      for (const user of currentUser.following) {
-        if (user !== username) {
-            let temp = await User.findOne({username: user}).select('name username image').exec();
-            followersFollowing.following.push(temp);
-        }
-      }
-      
-      return followersFollowing;
-    } catch (err) {
-      console.error(err);
-      return {
-        status: 500,
-        error: error.message
-      };
-    }
-  };
-
-  // ! End of functions related to following and unfollowing users
 
   return {
     getProfileData,

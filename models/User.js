@@ -3,7 +3,11 @@ const bcryptjs = require('bcryptjs');
 
 var UserSchema = new mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    name: {
+    firstName: {
+        type: String,
+        trim: true
+    },
+    lastName: {
         type: String,
         trim: true
     },
@@ -23,7 +27,40 @@ var UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    image: {
+    lgImage: {
+        link: {
+            type: String
+        },
+        id: {
+            type: String
+        },
+        deleteHash: {
+            type: String
+        }
+    },
+    mdImage: {
+        link: {
+            type: String
+        },
+        id: {
+            type: String
+        },
+        deleteHash: {
+            type: String
+        }
+    },
+    smImage: {
+        link: {
+            type: String
+        },
+        id: {
+            type: String
+        },
+        deleteHash: {
+            type: String
+        }
+    },
+    xsImage: {
         link: {
             type: String
         },
@@ -40,19 +77,6 @@ var UserSchema = new mongoose.Schema({
         type: [String],
         trim: true
     }],
-    collections: [{
-        title: String,
-        resources: [String]
-    }],
-    followers: {
-        type: [String],
-        default: 'everest'
-    },
-    following: {
-        type: [String],
-        default: 'everest'
-    },
-    recommends: [String],
     score: {
         type: Number,
         default: 0

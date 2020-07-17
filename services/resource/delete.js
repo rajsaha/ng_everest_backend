@@ -6,11 +6,12 @@ const DeleteResource = (() => {
     const deleteResource = async (data) => {
         try {
             const resource = await _Resource.findById(data.id).exec();
-            // TODO: Delete resource from all collections
-            if (resource && resource.deleteHash) {
+            if (resource) {
                 // * Delete image, find and remove resource, clear resource id in collection if any
-                await Promise.all([
-                    Imgur.deleteImage(resource.deleteHash), 
+                const response = await Promise.all([
+                    Imgur.deleteImage(resource.lgImage.deleteHash),
+                    Imgur.deleteImage(resource.mdImage.deleteHash), 
+                    Imgur.deleteImage(resource.smImage.deleteHash),
                     findOneAndRemove(data.id),
                     CollectionService.deleteResourceFromCollection2({username: resource.username, resourceId: data.id})
                 ]);
@@ -21,19 +22,7 @@ const DeleteResource = (() => {
                         status: 200
                     }
                 }
-            } else if (resource) {
-                // * Find and remove resource, clear resource id in collection if any
-                await Promise.all([
-                    findOneAndRemove({id: data.id}),
-                    CollectionService.deleteResourceFromCollection2({username: resource.username, resourceId: data.id})
-                ]);
-                return {
-                    message: {
-                        error: false,
-                        status: 200
-                    }
-                }
-            } else {
+            }  else {
                 return {
                     error: 'Resource not found'
                 }
@@ -48,7 +37,7 @@ const DeleteResource = (() => {
     const findOneAndRemove = async (data) => {
         try {
             const response = await _Resource.findOneAndRemove({
-                _id: data.id
+                _id: data
             }).exec();
             
             if (response) {

@@ -1,21 +1,9 @@
 var mongoose = require("mongoose");
-var CommentSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    trim: true
-  },
-  content: {
-    type: String,
-    trim: true
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now
-  }
-});
 var ResourceSchema = new mongoose.Schema({
-  username: {
-    type: String,
+  userId: {
+    type: mongoose.Types.ObjectId,
+    required: true,
+    ref: "User",
     trim: true
   },
   url: {
@@ -42,19 +30,43 @@ var ResourceSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  image: {
-    type: String,
-    trim: true
+  lgImage: {
+    link: {
+      type: String
+    },
+    id: {
+      type: String
+    },
+    deleteHash: {
+      type: String
+    }
   },
-  deleteHash: {
-    type: String,
-    trim: true
+  mdImage: {
+    link: {
+      type: String
+    },
+    id: {
+      type: String
+    },
+    deleteHash: {
+      type: String
+    }
+  },
+  smImage: {
+    link: {
+      type: String
+    },
+    id: {
+      type: String
+    },
+    deleteHash: {
+      type: String
+    }
   },
   timestamp: {
     type: Date,
     default: Date.now
   },
-  comments: [CommentSchema],
   recommended_by_count: {
     type: Number,
     default: 0

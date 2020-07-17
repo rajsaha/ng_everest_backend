@@ -5,7 +5,7 @@ const checkIfAuthenticated = require('../../../services/auth/checkIfAuthorized')
 
 router.post('/get-collections', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await Collection.getCollections(req.body.username);
+        const response = await Collection.getCollections(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
@@ -14,7 +14,7 @@ router.post('/get-collections', checkIfAuthenticated, async (req, res, next) => 
 
 router.post('/get-collection-by-id', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await Collection.getCollectionById(req.body.id);
+        const response = await Collection.getCollectionById(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
@@ -69,6 +69,15 @@ router.get('/delete-collection/:id', checkIfAuthenticated, async (req, res, next
 router.post('/change-collection-title', checkIfAuthenticated, async (req, res, next) => {
     try {
         const response = await Collection.changeCollectionTitle(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
+router.post('/change-collection-description', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await Collection.changeCollectionDescription(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
