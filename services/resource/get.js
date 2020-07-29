@@ -314,8 +314,6 @@ const ResourceGet = (() => {
         ])
         .exec();
 
-      console.log(resources);
-
       return {
         resources: resources[0].resources,
         count: resources[0].count[0].count,

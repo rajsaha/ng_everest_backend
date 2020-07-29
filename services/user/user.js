@@ -795,6 +795,7 @@ const Profile = (() => {
   };
 
   return {
+    getUserId,
     getProfileData,
     updateProfileData,
     removeInterest,
