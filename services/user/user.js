@@ -50,6 +50,14 @@ const Profile = (() => {
           }
         },
         {
+          $lookup: {
+            from: "collections",
+            localField: "_id",
+            foreignField: "anchorUserId",
+            as: "collection"
+          }
+        },
+        {
           $match: {
             _id: ObjectId(userId)
           }
@@ -81,6 +89,11 @@ const Profile = (() => {
             followerCount: {
               $size: {
                 $cond: [{ $isArray: "$follower" }, "$follower", []]
+              }
+            },
+            collectionCount: {
+              $size: {
+                $cond: [{ $isArray: "$collection" }, "$collection", []]
               }
             },
             following: {

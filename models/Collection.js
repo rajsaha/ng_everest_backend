@@ -1,5 +1,10 @@
 var mongoose = require('mongoose');
 var CollectionSchema = new mongoose.Schema({
+    anchorUserId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
     username: {
         type: String,
         required: true,

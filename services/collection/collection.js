@@ -411,6 +411,7 @@ const Collection = (() => {
 
       // * Create new collection
       const collection = new _Collection({
+        anchorUserId: data.userId,
         username: data.username,
         title: data.collectionTitle,
         description: data.description,
