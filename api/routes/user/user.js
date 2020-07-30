@@ -14,7 +14,7 @@ router.post('/get-user-id', checkIfAuthenticated, async (req, res, next) => {
 
 router.post('/get-user-data', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await User.getProfileData(req.body.userId);
+        const response = await User.getProfileData(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
