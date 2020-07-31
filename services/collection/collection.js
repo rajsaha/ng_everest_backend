@@ -224,7 +224,7 @@ const Collection = (() => {
     try {
       const collection = await _Collection
         .findOne({
-          title: data.title,
+          title: { $regex: data.title, $options: "i" },
           username: data.username,
         })
         .exec();
@@ -359,56 +359,6 @@ const Collection = (() => {
 
   const createCollectionAndPushResource = async (data) => {
     try {
-      let ifCollectionExists = false;
-      // Check if collection exists
-      const checkIfExists = await getCollectionByTitle({
-        title: data.collectionTitle,
-        username: data.username,
-      });
-
-      if (
-        checkIfExists.collection !== null &&
-        checkIfExists.collection.title === data.collectionTitle
-      ) {
-        ifCollectionExists = true;
-      }
-
-      // ! If collection exists and it's a new resource...
-      // ! push into collection
-      if (ifCollectionExists && data.newResource) {
-        await pushIntoCollection({
-          collectionId: checkIfExists.collection.id,
-          username: data.username,
-          resourceId: data.resourceId,
-          timestamp: data.formData.timestamp,
-        });
-
-        return {
-          message: {
-            error: false,
-            status: 200,
-            data: {
-              message: "Saved to collection!",
-            },
-          },
-        };
-      } else if (ifCollectionExists) {
-        return {
-          message: {
-            error: true,
-            status: 500,
-            message: "Collection already exists!",
-          },
-        };
-      }
-
-      if (data.currentCollectionId) {
-        await deleteResourceFromCollection({
-          collectionId: data.currentCollectionId,
-          resourceId: data.resourceId,
-        });
-      }
-
       // * Create new collection
       const collection = new _Collection({
         anchorUserId: data.userId,
