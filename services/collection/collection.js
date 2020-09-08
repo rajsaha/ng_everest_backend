@@ -251,7 +251,7 @@ const Collection = (() => {
       }
       query.skip = size * (pageNo - 1);
       query.limit = size;
-      
+
       const collection = await _Collection
         .aggregate([
           {
@@ -418,14 +418,30 @@ const Collection = (() => {
   };
 
   const deleteResourceFromCollection = async (data) => {
-    const response = await CollectionResource.findOneAndRemove({
-      anchorCollectionId: data.collectionId,
-      resourceId: data.resourceId,
-    }).exec();
-    if (response) {
-      return true;
+    try {
+      console.log(data);
+      const response = await CollectionResource.deleteOne({
+        anchorCollectionId: mongoose.Types.ObjectId(data.collectionId),
+        resourceId: mongoose.Types.ObjectId(data.resourceId),
+      }).exec();
+      console.log(response);
+      if (response) {
+        return {
+          error: false,
+          message: response
+        };
+      }
+      return {
+        error: true,
+        message: response,
+      };
+    } catch (error) {
+      console.error(err.message);
+      return {
+        error: true,
+        message: err.message,
+      };
     }
-    return false;
   };
 
   // * Duplicate function that uses username instead of collection Id
