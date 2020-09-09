@@ -476,50 +476,30 @@ const Collection = (() => {
     return false;
   };
 
-  const changeCollectionTitle = async (data) => {
+  const editCollectionDetails = async (data) => {
     try {
       const query = {
-        _id: data.id,
+        _id: mongoose.Types.ObjectId(data.id),
       };
       const update = {
         title: data.title,
+        description: data.description
       };
 
       const response = await _Collection.updateOne(query, update).exec();
       if (response) {
-        return true;
+        return {
+          error: false,
+          message: "Collection Edited"
+        };
       }
 
       return false;
     } catch (err) {
       console.error(err);
       return {
-        status: 500,
-        error: error.message,
-      };
-    }
-  };
-
-  const changeCollectionDescription = async (data) => {
-    try {
-      const query = {
-        _id: data.id,
-      };
-      const update = {
-        description: data.description,
-      };
-
-      const response = await _Collection.updateOne(query, update).exec();
-      if (response) {
-        return true;
-      }
-
-      return false;
-    } catch (err) {
-      console.error(err);
-      return {
-        status: 500,
-        error: error.message,
+        error: true,
+        message: error.message,
       };
     }
   };
@@ -599,11 +579,10 @@ const Collection = (() => {
     deleteResourceFromCollection,
     deleteResourceFromCollection2,
     deleteCollection,
-    changeCollectionTitle,
-    changeCollectionDescription,
     searchUserCollections,
     searchCollections,
     checkIfCollectionBelongsToUserLoggedIn,
+    editCollectionDetails
   };
 })();
 

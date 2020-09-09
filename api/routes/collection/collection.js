@@ -75,18 +75,9 @@ router.get('/delete-collection/:id', checkIfAuthenticated, async (req, res, next
     }
 });
 
-router.post('/change-collection-title', checkIfAuthenticated, async (req, res, next) => {
+router.post('/edit-collection-details', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await Collection.changeCollectionTitle(req.body);
-        res.status(200).json(response);
-    } catch (err) {
-        console.error(`Error: ${err.message}`);
-    }
-});
-
-router.post('/change-collection-description', checkIfAuthenticated, async (req, res, next) => {
-    try {
-        const response = await Collection.changeCollectionDescription(req.body);
+        const response = await Collection.editCollectionDetails(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
