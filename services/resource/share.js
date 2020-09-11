@@ -93,14 +93,14 @@ const ResourceShare = (() => {
           await CollectionService.pushIntoCollection({
             collectionId: data.collectionData.collectionId,
             resourceId: resource.id,
-            username: data.formData.username
           });
         } else {
           await CollectionService.createCollectionAndPushResource({
+            userId: data.formData.userId,
             username: data.formData.username,
             collectionTitle: data.collectionData.collectionName,
+            description: "",
             resourceId: resource.id,
-            newResource: true
           });
         }
       }
@@ -108,7 +108,6 @@ const ResourceShare = (() => {
       return {
         message: {
           error: false,
-          status: 200,
           data: {
             message: "Resource saved!"
           }
@@ -116,7 +115,7 @@ const ResourceShare = (() => {
       };
     } catch (error) {
       return {
-        status: 500,
+        error: true,
         error: error.message
       };
     }

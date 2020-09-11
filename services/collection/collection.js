@@ -1,27 +1,28 @@
 const mongoose = require("mongoose");
 const _Collection = require("../../models/Collection");
 const CollectionResource = require("../../models/CollectionResource");
-const ResourceService = require("../../services/resource/get");
 const selectFields = "_id username title resources timestamp";
 
 const Collection = (() => {
-  // ? Old
-  // const getCollections = async username => {
-  //   try {
-  //     const collections = await _Collection
-  //       .find({
-  //         username: username
-  //       })
-  //       .exec();
-  //     return {
-  //       collections: collections
-  //     };
-  //   } catch (err) {
-  //     return {
-  //       error: err.message
-  //     };
-  //   }
-  // };
+  const getCollectionTitles = async (data) => {
+    try {
+      const collections = await _Collection
+        .find({
+          username: data.username,
+        })
+        .exec();
+      return {
+        error: false,
+        data: collections,
+      };
+    } catch (err) {
+      console.log(err.message);
+      return {
+        error: true,
+        message: err.message,
+      };
+    }
+  };
 
   const getCollections = async (data) => {
     try {
@@ -588,6 +589,7 @@ const Collection = (() => {
 
   return {
     getCollections,
+    getCollectionTitles,
     getCollectionNameByResourceId,
     getCollectionByTitle,
     getCollectionById,

@@ -20,7 +20,22 @@ var CollectionSchema = new mongoose.Schema({
         required: false,
         trim: true
     },
-    image: {
+    xsImage: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    smImage: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    mdImage: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    lgImage: {
         type: String,
         required: false,
         trim: true

@@ -4,9 +4,9 @@
         "MLAB_PW": "l1L9W9mN5x9MP8Fy",
         "IMAGE_UPLOAD_URL": "https://api.imgur.com/3/upload",
         "IMAGE_DELETE_URL": "https://api.imgur.com/3/image",
-        "CLIENT_ID": "546c25a59c58ad7",
-        "CLIENT_SECRET": "aa55789e92517500e09733f931a3943609d691d9",
-        "ACCESS_TOKEN": "5a6d51a76ff5e6e6b2b8c096a4c48fdcd53fb706",
+        "CLIENT_ID": "9bb0215c3ebe852",
+        "CLIENT_SECRET": "c08abe016af7ef1daea1740f3329f7954f18cc6a",
+        "ACCESS_TOKEN": "2adc348fb5519b47efa77730372dfd274d2ba980",
         "USERNAME": "rajwraith"
     }
 }
