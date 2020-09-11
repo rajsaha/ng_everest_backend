@@ -428,7 +428,7 @@ const Collection = (() => {
       if (response) {
         return {
           error: false,
-          message: response
+          message: response,
         };
       }
       return {
@@ -464,16 +464,34 @@ const Collection = (() => {
     return false;
   };
 
-  const deleteCollection = async (id) => {
-    const response = await _Collection
-      .deleteOne({
-        _id: id,
-      })
-      .exec();
-    if (response) {
-      return true;
+  const deleteCollection = async (data) => {
+    try {
+      const response = await _Collection
+        .deleteMany({
+          _id: mongoose.Types.ObjectId(data.id),
+        })
+        .exec();
+
+      const response2 = await CollectionResource.deleteMany({
+        anchorCollectionId: mongoose.Types.ObjectId(data.id),
+      }).exec();
+
+      if (response && response2) {
+        return {
+          error: false,
+          message: "Collection deleted",
+        };
+      }
+      return {
+        error: true,
+      };
+    } catch (err) {
+      console.error(err);
+      return {
+        error: true,
+        message: error.message,
+      };
     }
-    return false;
   };
 
   const editCollectionDetails = async (data) => {
@@ -483,14 +501,14 @@ const Collection = (() => {
       };
       const update = {
         title: data.title,
-        description: data.description
+        description: data.description,
       };
 
       const response = await _Collection.updateOne(query, update).exec();
       if (response) {
         return {
           error: false,
-          message: "Collection Edited"
+          message: "Collection Edited",
         };
       }
 
@@ -582,7 +600,7 @@ const Collection = (() => {
     searchUserCollections,
     searchCollections,
     checkIfCollectionBelongsToUserLoggedIn,
-    editCollectionDetails
+    editCollectionDetails,
   };
 })();
 
