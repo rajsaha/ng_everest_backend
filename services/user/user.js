@@ -30,7 +30,7 @@ const Profile = (() => {
       };
     }
   };
-  const getProfileData = async (data) => {
+  const getUserData = async (data) => {
     try {
       const user = await User.aggregate([
         {
@@ -707,34 +707,54 @@ const Profile = (() => {
     }
   };
 
-  const getFollowersFollowing = async (username) => {
-    try {
-      let followersFollowing = {
-        followers: [],
-        following: [],
-      };
-      const currentUser = await User.findOne({ username })
-        .select("followers following")
-        .exec();
-      for (const user of currentUser.followers) {
-        if (user !== username) {
-          let temp = await User.findOne({ username: user })
-            .select("name username image")
-            .exec();
-          followersFollowing.followers.push(temp);
-        }
-      }
+  const getFollowersFollowing = async (data) => {
+    try {      
+      const user = await User.aggregate([
+        {
+          $lookup: {
+            from: "followers",
+            localField: "_id",
+            foreignField: "anchorUserId",
+            as: "follower",
+          },
+        },
+        {
+          $lookup: {
+            from: "followings",
+            localField: "_id",
+            foreignField: "anchorUserId",
+            as: "following",
+          },
+        },
+        {
+          $match: {
+            _id: ObjectId(data.userId),
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            followingCount: {
+              $size: {
+                $cond: [{ $isArray: "$following" }, "$following", []],
+              },
+            },
+            followerCount: {
+              $size: {
+                $cond: [{ $isArray: "$follower" }, "$follower", []],
+              },
+            },
+            following: {
+              $slice: ["$following", 0, 4],
+            },
+            followers: {
+              $slice: ["$follower", 0, 4],
+            },
+          },
+        },
+      ]).exec();
 
-      for (const user of currentUser.following) {
-        if (user !== username) {
-          let temp = await User.findOne({ username: user })
-            .select("name username image")
-            .exec();
-          followersFollowing.following.push(temp);
-        }
-      }
-
-      return followersFollowing;
+      return user;
     } catch (err) {
       console.error(err);
       return {
@@ -817,7 +837,7 @@ const Profile = (() => {
 
   return {
     getUserId,
-    getProfileData,
+    getUserData,
     updateProfileData,
     removeInterest,
     saveProfilePhoto,
