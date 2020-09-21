@@ -38,7 +38,7 @@ const Utility = (() => {
         responseEncoding: 'binary'
       });
       let mimeType = image.headers["content-type"];
-      let b64SansHeader = Buffer.from(image.data, "binary").toString("base64");
+      let b64SansHeader = new Buffer.from(image.data, "binary").toString("base64");
       let b64 = `data:${mimeType};base64,${b64SansHeader}`;
       
       return b64;

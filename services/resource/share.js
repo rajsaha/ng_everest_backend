@@ -6,27 +6,27 @@ const Imgur = require("../imgur/imgur");
 const Utility = require("../utility/Utility");
 
 const ResourceShare = (() => {
-  const getOpenGraphData = async url => {
+  const getOpenGraphData = async (url) => {
     const response = await ogs({
-      url: url
+      url: url,
     });
 
     if (!response) {
       return {
-        message: response
+        message: response,
       };
     } else {
       return {
         message: {
           error: false,
           status: 200,
-          data: response
-        }
+          data: response,
+        },
       };
     }
   };
 
-  const shareResource = async data => {
+  const shareResource = async (data) => {
     try {
       let response = null;
       let sprLG = null;
@@ -34,12 +34,33 @@ const ResourceShare = (() => {
       let sprSM = null;
 
       // * Handle user uploading custom image
-      if (data.customImage) {
+      if (data.formData.isCustomImage) {
         response = await Promise.all([
-          Imgur.saveImage(data.customImage, 600),
-          Imgur.saveImage(data.customImage, 275),
-          Imgur.saveImage(data.customImage, 100)
+          Imgur.saveImage(data.formData.customImage, 600),
+          Imgur.saveImage(data.formData.customImage, 275),
+          Imgur.saveImage(data.formData.customImage, 100),
         ]);
+
+        if (response[0].error) {
+          return {
+            error: true,
+            message: 'Issue saving LG image: ' + response[0].message,
+          };
+        }
+
+        if (response[1].error) {
+          return {
+            error: true,
+            message: 'Issue saving MD image: ' + response[0].message,
+          };
+        }
+
+        if (response[2].error) {
+          return {
+            error: true,
+            message: 'Issue saving SM image: ' + response[0].message,
+          };
+        }
 
         sprLG = response[0];
         sprMD = response[1];
@@ -47,14 +68,35 @@ const ResourceShare = (() => {
       } else {
         // * Convert image to base64 and save to Imgur
         let base64Image = await Utility.convertImageFromURLToBase64(
-          data.formData.image
+          data.formData.ogImage
         );
 
         response = await Promise.all([
           Imgur.saveImage(base64Image, 600),
           Imgur.saveImage(base64Image, 275),
-          Imgur.saveImage(base64Image, 100)
+          Imgur.saveImage(base64Image, 100),
         ]);
+
+        if (response[0].error) {
+          return {
+            error: true,
+            message: 'Issue saving LG image: ' + response[0].message,
+          };
+        }
+
+        if (response[1].error) {
+          return {
+            error: true,
+            message: 'Issue saving MD image: ' + response[0].message,
+          };
+        }
+
+        if (response[2].error) {
+          return {
+            error: true,
+            message: 'Issue saving SM image: ' + response[0].message,
+          };
+        }
 
         sprLG = response[0];
         sprMD = response[1];
@@ -71,19 +113,19 @@ const ResourceShare = (() => {
         lgImage: {
           link: sprLG.data.data.link,
           id: sprLG.data.data.id,
-          deleteHash: sprLG.data.data.deletehash
+          deleteHash: sprLG.data.data.deletehash,
         },
         mdImage: {
           link: sprMD.data.data.link,
           id: sprMD.data.data.id,
-          deleteHash: sprMD.data.data.deletehash
+          deleteHash: sprMD.data.data.deletehash,
         },
         smImage: {
           link: sprSM.data.data.link,
           id: sprSM.data.data.id,
-          deleteHash: sprSM.data.data.deletehash
+          deleteHash: sprSM.data.data.deletehash,
         },
-        tags: data.tags
+        tags: data.tags,
       });
 
       await resource.save();
@@ -109,21 +151,21 @@ const ResourceShare = (() => {
         message: {
           error: false,
           data: {
-            message: "Resource saved!"
-          }
-        }
+            message: "Resource saved!",
+          },
+        },
       };
     } catch (error) {
       return {
         error: true,
-        error: error.message
+        error: error.message,
       };
     }
   };
 
   return {
     getOpenGraphData,
-    shareResource
+    shareResource,
   };
 })();
 
