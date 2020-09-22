@@ -256,6 +256,11 @@ const Collection = (() => {
       const collection = await _Collection
         .aggregate([
           {
+            $match: {
+              _id: mongoose.Types.ObjectId(data.id),
+            },
+          },
+          {
             $lookup: {
               from: "collectionresources",
               localField: "_id",
@@ -272,50 +277,59 @@ const Collection = (() => {
             },
           },
           {
-            $facet: {
-              collection: [
-                {
-                  $sort: {
-                    timestamp: -1,
-                  },
+            $lookup: {
+              from: "users",
+              localField: "resources.userId",
+              foreignField: "_id",
+              as: "users"
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              title: 1,
+              description: 1,
+              image: 1,
+              timestamp: 1,
+              resources: {
+                $map: {
+                  input: "$resources",
+                  as: "resource",
+                  in: {
+                    _id: "$$resource._id",
+                    description: "$$resource.description",
+                    lgImage: "$$resource.lgImage",
+                    mdImage: "$$resource.mdImage",
+                    smImage: "$$resource.smImage",
+                    title: "$$resource.title",
+                    type: "$$resource.type",
+                    url: "$$resource.url",
+                    timestamp: "$$resource.timestamp",
+                    username: {
+                      $map: {
+                        input: {
+                          $filter: {
+                            input: "$users",
+                            as: "user",
+                            cond: { $eq: ["$$user._id", "$$resource.userId"] }
+                          }
+                        },
+                        as: "filteredUser",
+                        in: {
+                          username: "$$filteredUser.username"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              count: {
+                $cond: {
+                  if: { $isArray: "$resources" },
+                  then: { $size: "$resources" },
+                  else: "0",
                 },
-                {
-                  $match: {
-                    _id: mongoose.Types.ObjectId(data.id),
-                  },
-                },
-                {
-                  $project: {
-                    _id: 1,
-                    title: 1,
-                    description: 1,
-                    image: 1,
-                    timestamp: 1,
-                    resources: "$resources",
-                    count: {
-                      $cond: {
-                        if: { $isArray: "$resources" },
-                        then: { $size: "$resources" },
-                        else: "0",
-                      },
-                    },
-                  },
-                },
-                {
-                  $skip: query.skip,
-                },
-                {
-                  $limit: query.limit,
-                },
-              ],
-              count: [
-                {
-                  $group: {
-                    _id: 0,
-                    count: { $sum: 1 },
-                  },
-                },
-              ],
+              },
             },
           },
         ])
