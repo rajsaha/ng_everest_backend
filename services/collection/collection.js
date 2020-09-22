@@ -305,6 +305,7 @@ const Collection = (() => {
                     type: "$$resource.type",
                     url: "$$resource.url",
                     timestamp: "$$resource.timestamp",
+                    recommended_by_count: "$$resource.recommended_by_count",
                     username: {
                       $map: {
                         input: {
