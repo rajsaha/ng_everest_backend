@@ -18,7 +18,6 @@ const EditResource = (() => {
 
       let update = {
         $set: {
-          url: data.formData.url ? data.formData.url : "",
           title: data.formData.title ? data.formData.title : "",
           description: data.formData.description
             ? data.formData.description
@@ -36,7 +35,7 @@ const EditResource = (() => {
       };
 
       // * Handle user uploading custom image
-      if (data.customImage) {
+      if (data.formData.isCustomImage) {
         // Delete resource images
         const deleteResourceImagesResponse = await deleteResourceImages(
           data.formData.id
@@ -47,51 +46,31 @@ const EditResource = (() => {
 
         // Getting imgur data for custom image
         response = await Promise.all([
-          Imgur.saveImage(data.customImage, 600),
-          Imgur.saveImage(data.customImage, 275),
-          Imgur.saveImage(data.customImage, 100),
+          Imgur.saveImage(data.formData.customImage, 600),
+          Imgur.saveImage(data.formData.customImage, 275),
+          Imgur.saveImage(data.formData.customImage, 100),
         ]);
 
-        sprLG = response[0];
-        sprMD = response[1];
-        sprSM = response[2];
-
-        update.$set.lgImage = {
-          link: sprLG.data.data.link,
-          id: sprLG.data.data.id,
-          deleteHash: sprLG.data.data.deletehash,
-        };
-
-        update.$set.mdImage = {
-          link: sprMD.data.data.link,
-          id: sprMD.data.data.id,
-          deleteHash: sprMD.data.data.deletehash,
-        };
-
-        update.$set.smImage = {
-          link: sprSM.data.data.link,
-          id: sprSM.data.data.id,
-          deleteHash: sprSM.data.data.deletehash,
-        };
-      } else if (data.isUrlChanged) {
-        // Delete resource images
-        const deleteResourceImagesResponse = await deleteResourceImages(
-          data.formData.id
-        );
-        if (deleteResourceImagesResponse) {
-          console.log("Resource images deleted");
+        if (response[0].error) {
+          return {
+            error: true,
+            message: 'Issue saving LG image: ' + response[0].message,
+          };
         }
 
-        // * Convert image to base64 and save to Imgur
-        let base64Image = await Utility.convertImageFromURLToBase64(
-          data.formData.image
-        );
+        if (response[1].error) {
+          return {
+            error: true,
+            message: 'Issue saving MD image: ' + response[0].message,
+          };
+        }
 
-        response = await Promise.all([
-          Imgur.saveImage(base64Image, 600),
-          Imgur.saveImage(base64Image, 275),
-          Imgur.saveImage(base64Image, 100),
-        ]);
+        if (response[2].error) {
+          return {
+            error: true,
+            message: 'Issue saving SM image: ' + response[0].message,
+          };
+        }
 
         sprLG = response[0];
         sprMD = response[1];
@@ -119,20 +98,9 @@ const EditResource = (() => {
       // * Run update
       const resource = await _Resource.updateOne(query, update).exec();
 
-      // * Put resource into collection or not
-      if (data.formData.collectionName) {
-        await CollectionService.createCollectionAndPushResource({
-          collectionTitle: data.formData.collectionName,
-          resourceId: data.formData.id,
-          username: data.formData.username,
-          newResource: false,
-        });
-      }
-
       return {
         message: {
           error: false,
-          status: 200,
           data: {
             message: "Resource updated!",
           },
