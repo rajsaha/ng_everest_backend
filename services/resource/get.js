@@ -278,6 +278,7 @@ const ResourceGet = (() => {
                 {
                   $project: {
                     _id: 1,
+                    username: "$user.username",
                     userId: 1,
                     url: 1,
                     title: 1,
