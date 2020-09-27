@@ -22,6 +22,9 @@ const EditResource = (() => {
           description: data.formData.description
             ? data.formData.description
             : "",
+          noImage: data.formData.noImage,
+          backgroundColor: data.noImageData.backgroundColor,
+          textColor: data.noImageData.textColor
         },
         $addToSet: {
           tags: {
