@@ -76,6 +76,9 @@ const ResourceGet = (() => {
                     deleteHash: 1,
                     timestamp: 1,
                     recommended_by_count: 1,
+                    noImage: 1,
+                    backgroundColor: 1,
+                    textColor: 1
                   },
                 },
                 {
@@ -288,6 +291,9 @@ const ResourceGet = (() => {
                     mdImage: 1,
                     timestamp: 1,
                     recommended_by_count: 1,
+                    noImage: 1,
+                    backgroundColor: 1,
+                    textColor: 1
                   },
                 },
                 {
@@ -358,6 +364,9 @@ const ResourceGet = (() => {
             deleteHash: 1,
             timestamp: 1,
             recommended_by_count: 1,
+            noImage: 1,
+            backgroundColor: 1,
+            textColor: 1
           },
         },
       ]);

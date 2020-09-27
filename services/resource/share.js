@@ -32,6 +32,21 @@ const ResourceShare = (() => {
       let sprLG = null;
       let sprMD = null;
       let sprSM = null;
+      let lgImage = {
+        link: null,
+        id: null,
+        deleteHash: null,
+      };
+      let mdImage = {
+        link: null,
+        id: null,
+        deleteHash: null,
+      };
+      let smImage = {
+        link: null,
+        id: null,
+        deleteHash: null,
+      };
 
       // * Handle user uploading custom image
       if (data.formData.isCustomImage) {
@@ -65,7 +80,25 @@ const ResourceShare = (() => {
         sprLG = response[0];
         sprMD = response[1];
         sprSM = response[2];
-      } else {
+
+        lgImage = {
+          link: sprLG.data.data.link,
+          id: sprLG.data.data.id,
+          deleteHash: sprLG.data.data.deletehash,
+        };
+
+        mdImage = {
+          link: sprMD.data.data.link,
+          id: sprMD.data.data.id,
+          deleteHash: sprMD.data.data.deletehash,
+        };
+
+        smImage = {
+          link: sprSM.data.data.link,
+          id: sprSM.data.data.id,
+          deleteHash: sprSM.data.data.deletehash,
+        };
+      } else if (!data.formData.noImage) {
         // * Convert image to base64 and save to Imgur
         let base64Image = await Utility.convertImageFromURLToBase64(
           data.formData.ogImage
@@ -101,6 +134,26 @@ const ResourceShare = (() => {
         sprLG = response[0];
         sprMD = response[1];
         sprSM = response[2];
+
+        lgImage = {
+          link: sprLG.data.data.link,
+          id: sprLG.data.data.id,
+          deleteHash: sprLG.data.data.deletehash,
+        };
+
+        mdImage = {
+          link: sprMD.data.data.link,
+          id: sprMD.data.data.id,
+          deleteHash: sprMD.data.data.deletehash,
+        };
+
+        smImage = {
+          link: sprSM.data.data.link,
+          id: sprSM.data.data.id,
+          deleteHash: sprSM.data.data.deletehash,
+        };
+      } else {
+        // * Code for no image
       }
 
       const resource = new Resource({
@@ -110,22 +163,13 @@ const ResourceShare = (() => {
         title: data.formData.title,
         type: data.formData.type,
         description: data.formData.description,
-        lgImage: {
-          link: sprLG.data.data.link,
-          id: sprLG.data.data.id,
-          deleteHash: sprLG.data.data.deletehash,
-        },
-        mdImage: {
-          link: sprMD.data.data.link,
-          id: sprMD.data.data.id,
-          deleteHash: sprMD.data.data.deletehash,
-        },
-        smImage: {
-          link: sprSM.data.data.link,
-          id: sprSM.data.data.id,
-          deleteHash: sprSM.data.data.deletehash,
-        },
+        lgImage: lgImage,
+        mdImage: mdImage,
+        smImage: smImage,
         tags: data.tags,
+        noImage: data.formData.noImage,
+        backgroundColor: data.noImageData.backgroundColor,
+        textColor: data.noImageData.textColor
       });
 
       await resource.save();
@@ -156,6 +200,7 @@ const ResourceShare = (() => {
         },
       };
     } catch (error) {
+      console.error(error);
       return {
         error: true,
         error: error.message,

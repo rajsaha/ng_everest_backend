@@ -63,6 +63,18 @@ var ResourceSchema = new mongoose.Schema({
       type: String
     }
   },
+  noImage: {
+    type: Boolean,
+    default: false
+  },
+  backgroundColor: {
+    type: String,
+    default: "#000"
+  },
+  textColor: {
+    type: String,
+    default: "#fff"
+  },
   timestamp: {
     type: Date,
     default: Date.now
