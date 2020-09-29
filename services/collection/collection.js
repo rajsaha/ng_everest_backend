@@ -306,6 +306,9 @@ const Collection = (() => {
                     url: "$$resource.url",
                     timestamp: "$$resource.timestamp",
                     recommended_by_count: "$$resource.recommended_by_count",
+                    noImage: "$$resource.noImage",
+                    backgroundColor: "$$resource.backgroundColor",
+                    textColor: "$$resource.textColor",
                     username: {
                       $map: {
                         input: {
