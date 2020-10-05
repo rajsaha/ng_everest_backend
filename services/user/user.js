@@ -709,52 +709,81 @@ const Profile = (() => {
 
   const getFollowersFollowing = async (data) => {
     try {      
-      const user = await User.aggregate([
-        {
-          $lookup: {
-            from: "followers",
-            localField: "_id",
-            foreignField: "anchorUserId",
-            as: "follower",
-          },
-        },
-        {
-          $lookup: {
-            from: "followings",
-            localField: "_id",
-            foreignField: "anchorUserId",
-            as: "following",
-          },
-        },
+      const followers = await Follower.aggregate([
         {
           $match: {
-            _id: ObjectId(data.userId),
+            anchorUserId: ObjectId(data.userId),
           },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "users"
+          }
         },
         {
           $project: {
             _id: 1,
-            followingCount: {
-              $size: {
-                $cond: [{ $isArray: "$following" }, "$following", []],
-              },
-            },
-            followerCount: {
-              $size: {
-                $cond: [{ $isArray: "$follower" }, "$follower", []],
-              },
-            },
-            following: {
-              $slice: ["$following", 0, 4],
-            },
             followers: {
-              $slice: ["$follower", 0, 4],
+              $map: {
+                input: "$users",
+                as: "user",
+                in: {
+                  id: "$$user._id",
+                  username: "$$user.username",
+                  firstName: "$$user.firstName",
+                  lastName: "$$user.lastName",
+                  image: "$$user.smImage.link"
+                }
+              }
             },
           },
         },
       ]).exec();
 
-      return user;
+      const followings = await Following.aggregate([
+        {
+          $match: {
+            anchorUserId: ObjectId(data.userId),
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "users"
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            followings: {
+              $map: {
+                input: "$users",
+                as: "user",
+                in: {
+                  id: "$$user._id",
+                  username: "$$user.username",
+                  firstName: "$$user.firstName",
+                  lastName: "$$user.lastName",
+                  image: "$$user.smImage.link"
+                }
+              }
+            },
+          },
+        },
+      ]).exec();
+
+      return {
+        error: false,
+        data: {
+          followers,
+          followings
+        }
+      };
     } catch (err) {
       console.error(err);
       return {
