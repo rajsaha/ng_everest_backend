@@ -566,18 +566,6 @@ const Collection = (() => {
 
   const searchUserCollections = async (data) => {
     try {
-      // Set up pagination
-      const pageNo = parseInt(data.pageNo);
-      const size = parseInt(data.size);
-      let query = {};
-      if (pageNo < 0 || pageNo === 0) {
-        return {
-          error: "Invalid page number",
-        };
-      }
-      query.skip = size * (pageNo - 1);
-      query.limit = size;
-
       let aggregateArray = [
         {
           $lookup: {
@@ -616,7 +604,10 @@ const Collection = (() => {
                   title: 1,
                   description: 1,
                   timestamp: 1,
-                  resources: "$resources",
+                  resource1: { $arrayElemAt: ["$resources", 0] },
+                  resource2: { $arrayElemAt: ["$resources", 1] },
+                  resource3: { $arrayElemAt: ["$resources", 2] },
+                  resource4: { $arrayElemAt: ["$resources", 3] },
                   count: {
                     $cond: {
                       if: { $isArray: "$resources" },
@@ -627,10 +618,7 @@ const Collection = (() => {
                 },
               },
               {
-                $skip: query.skip,
-              },
-              {
-                $limit: query.limit,
+                $limit: 10,
               },
             ],
             count: [
@@ -654,8 +642,7 @@ const Collection = (() => {
     } catch (err) {
       console.error(err);
       return {
-        status: 500,
-        error: error.message,
+        error: err.message,
       };
     }
   };
