@@ -281,8 +281,8 @@ const Collection = (() => {
               from: "users",
               localField: "resources.userId",
               foreignField: "_id",
-              as: "users"
-            }
+              as: "users",
+            },
           },
           {
             $project: {
@@ -315,17 +315,17 @@ const Collection = (() => {
                           $filter: {
                             input: "$users",
                             as: "user",
-                            cond: { $eq: ["$$user._id", "$$resource.userId"] }
-                          }
+                            cond: { $eq: ["$$user._id", "$$resource.userId"] },
+                          },
                         },
                         as: "filteredUser",
                         in: {
-                          username: "$$filteredUser.username"
-                        }
-                      }
-                    }
-                  }
-                }
+                          username: "$$filteredUser.username",
+                        },
+                      },
+                    },
+                  },
+                },
               },
               count: {
                 $cond: {
@@ -566,18 +566,90 @@ const Collection = (() => {
 
   const searchUserCollections = async (data) => {
     try {
-      const collections = await _Collection
-        .find(
-          {
-            username: data.username,
-            title: { $regex: `${data.title}`, $options: "i" },
+      // Set up pagination
+      const pageNo = parseInt(data.pageNo);
+      const size = parseInt(data.size);
+      let query = {};
+      if (pageNo < 0 || pageNo === 0) {
+        return {
+          error: "Invalid page number",
+        };
+      }
+      query.skip = size * (pageNo - 1);
+      query.limit = size;
+
+      let aggregateArray = [
+        {
+          $lookup: {
+            from: "collectionresources",
+            localField: "_id",
+            foreignField: "anchorCollectionId",
+            as: "collectionResource",
           },
-          selectFields
-        )
-        .exec();
+        },
+        {
+          $lookup: {
+            from: "resources",
+            localField: "collectionResource.resourceId",
+            foreignField: "_id",
+            as: "resources",
+          },
+        },
+        {
+          $facet: {
+            collections: [
+              {
+                $sort: {
+                  timestamp: -1,
+                },
+              },
+              {
+                $match: {
+                  username: data.username,
+                  title: { $regex: `${data.query}`, $options: "i" },
+                },
+              },
+              {
+                $project: {
+                  _id: 1,
+                  username: 1,
+                  title: 1,
+                  description: 1,
+                  timestamp: 1,
+                  resources: "$resources",
+                  count: {
+                    $cond: {
+                      if: { $isArray: "$resources" },
+                      then: { $size: "$resources" },
+                      else: "0",
+                    },
+                  },
+                },
+              },
+              {
+                $skip: query.skip,
+              },
+              {
+                $limit: query.limit,
+              },
+            ],
+            count: [
+              {
+                $group: {
+                  _id: 0,
+                  count: { $sum: 1 },
+                },
+              },
+            ],
+          },
+        },
+      ];
+
+      const collections = await _Collection.aggregate(aggregateArray).exec();
 
       return {
-        collections,
+        error: false,
+        collections: collections,
       };
     } catch (err) {
       console.error(err);
