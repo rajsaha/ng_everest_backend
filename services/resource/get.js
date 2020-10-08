@@ -8,7 +8,7 @@ const Comment = require("../../models/Comment");
 const ObjectId = mongoose.Types.ObjectId;
 
 const selectFields =
-  "_id username title description smImage.link url timestamp tags recommended_by_count type";
+  "_id username title description smImage.link url timestamp tags recommended_by_count type noImage backgroundColor textColor";
 
 const ResourceGet = (() => {
   const getAllResources = async (data) => {
@@ -515,29 +515,124 @@ const ResourceGet = (() => {
         const regex = [new RegExp(sansHash, "i")];
 
         // * Search for resources with tag
+
         const resources = await _Resource
-          .find({ tags: { $in: regex } }, selectFields)
-          .limit(10)
-          .sort({
-            recommended_by_count: recommend ? -1 : 1,
-            timestamp: recent ? -1 : 1,
-          })
+          .aggregate([
+            {
+              $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
+                as: "user",
+              },
+            },
+            {
+              $facet: {
+                resources: [
+                  {
+                    $sort: {
+                      timestamp: -1,
+                    },
+                  },
+                  {
+                    $match: { tags: { $in: regex } },
+                  },
+                  {
+                    $project: {
+                      _id: 1,
+                      username: "$user.username",
+                      userId: 1,
+                      url: 1,
+                      title: 1,
+                      type: 1,
+                      tags: 1,
+                      description: 1,
+                      mdImage: 1,
+                      timestamp: 1,
+                      recommended_by_count: 1,
+                      noImage: 1,
+                      backgroundColor: 1,
+                      textColor: 1,
+                    },
+                  },
+                  {
+                    $limit: 10,
+                  },
+                  {
+                    $sort: {
+                      recommended_by_count: recommend ? -1 : 1,
+                      timestamp: recent ? -1 : 1,
+                    },
+                  },
+                ],
+              },
+            },
+          ])
           .exec();
         return {
-          resources,
+          error: false,
+          data: resources,
         };
       }
 
       const resources = await _Resource
-        .find({ title: { $regex: `${query}`, $options: "i" } }, selectFields)
-        .limit(10)
-        .sort({
-          recommended_by_count: recommend ? -1 : 1,
-          timestamp: recent ? -1 : 1,
-        })
+        .aggregate([
+          {
+            $lookup: {
+              from: "users",
+              localField: "userId",
+              foreignField: "_id",
+              as: "user",
+            },
+          },
+          {
+            $facet: {
+              resources: [
+                {
+                  $sort: {
+                    timestamp: -1,
+                  },
+                },
+                {
+                  $match: {
+                    title: { $regex: `${query}`, $options: "i" },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    username: "$user.username",
+                    userId: 1,
+                    url: 1,
+                    title: 1,
+                    type: 1,
+                    tags: 1,
+                    description: 1,
+                    mdImage: 1,
+                    timestamp: 1,
+                    recommended_by_count: 1,
+                    noImage: 1,
+                    backgroundColor: 1,
+                    textColor: 1,
+                  },
+                },
+                {
+                  $limit: 10,
+                },
+                {
+                  $sort: {
+                    recommended_by_count: recommend ? -1 : 1,
+                    timestamp: recent ? -1 : 1,
+                  },
+                },
+              ],
+            },
+          },
+        ])
         .exec();
       return {
-        resources,
+        error: false,
+        data: resources,
       };
     } catch (err) {
       return {
