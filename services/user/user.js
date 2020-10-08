@@ -12,7 +12,8 @@ const ResourceService = require("../resource/get");
 const CollectionService = require("../collection/collection");
 const Imgur = require("../imgur/imgur");
 const bcryptjs = require("bcryptjs");
-const selectFields = "name username smImage.link";
+const selectFields =
+  "firstName lastName username smImage.link mdImage.link xsImage.link";
 
 const Profile = (() => {
   const getUserId = async (username) => {
@@ -708,7 +709,7 @@ const Profile = (() => {
   };
 
   const getFollowersFollowing = async (data) => {
-    try {      
+    try {
       const followers = await Follower.aggregate([
         {
           $match: {
@@ -720,8 +721,8 @@ const Profile = (() => {
             from: "users",
             localField: "userId",
             foreignField: "_id",
-            as: "users"
-          }
+            as: "users",
+          },
         },
         {
           $project: {
@@ -735,9 +736,9 @@ const Profile = (() => {
                   username: "$$user.username",
                   firstName: "$$user.firstName",
                   lastName: "$$user.lastName",
-                  image: "$$user.smImage.link"
-                }
-              }
+                  image: "$$user.smImage.link",
+                },
+              },
             },
           },
         },
@@ -754,8 +755,8 @@ const Profile = (() => {
             from: "users",
             localField: "userId",
             foreignField: "_id",
-            as: "users"
-          }
+            as: "users",
+          },
         },
         {
           $project: {
@@ -769,9 +770,9 @@ const Profile = (() => {
                   username: "$$user.username",
                   firstName: "$$user.firstName",
                   lastName: "$$user.lastName",
-                  image: "$$user.smImage.link"
-                }
-              }
+                  image: "$$user.smImage.link",
+                },
+              },
             },
           },
         },
@@ -781,8 +782,8 @@ const Profile = (() => {
         error: false,
         data: {
           followers,
-          followings
-        }
+          followings,
+        },
       };
     } catch (err) {
       console.error(err);
@@ -801,17 +802,35 @@ const Profile = (() => {
       if (!options.user) {
         return;
       }
-      const users = await User.find(
+      const users = await User.aggregate([
         {
-          $or: [
-            { name: { $regex: query, $options: "i" } },
-            { username: { $regex: query, $options: "i" } },
-          ],
+          $match: {
+            $or: [
+              { firstName: { $regex: query, $options: "i" } },
+              { lasttName: { $regex: query, $options: "i" } },
+              { username: { $regex: query, $options: "i" } },
+            ],
+          },
         },
-        selectFields
-      )
-        .limit(10)
-        .exec();
+        {
+          $sort: {
+            timestamp: -1,
+          },
+        },
+        {
+          $limit: 10,
+        },
+        {
+          $project: {
+            _id: 1,
+            firstName: 1,
+            lastName: 1,
+            username: 1,
+            image: "$mdImage.link",
+            timestamp: 1,
+          },
+        },
+      ]).exec();
 
       return {
         users,

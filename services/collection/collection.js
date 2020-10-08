@@ -575,7 +575,6 @@ const Collection = (() => {
               },
               {
                 $match: {
-                  username: data.username,
                   title: { $regex: `${query}`, $options: "i" },
                 },
               },
