@@ -547,19 +547,84 @@ const Collection = (() => {
       if (!options.collection) {
         return;
       }
-      const collections = await _Collection
-        .find({ title: { $regex: `${query}`, $options: "i" } }, selectFields)
-        .limit(10)
-        .exec();
+
+      let aggregateArray = [
+        {
+          $lookup: {
+            from: "collectionresources",
+            localField: "_id",
+            foreignField: "anchorCollectionId",
+            as: "collectionResource",
+          },
+        },
+        {
+          $lookup: {
+            from: "resources",
+            localField: "collectionResource.resourceId",
+            foreignField: "_id",
+            as: "resources",
+          },
+        },
+        {
+          $facet: {
+            collections: [
+              {
+                $sort: {
+                  timestamp: -1,
+                },
+              },
+              {
+                $match: {
+                  username: data.username,
+                  title: { $regex: `${query}`, $options: "i" },
+                },
+              },
+              {
+                $project: {
+                  _id: 1,
+                  username: 1,
+                  title: 1,
+                  description: 1,
+                  timestamp: 1,
+                  resource1: { $arrayElemAt: ["$resources", 0] },
+                  resource2: { $arrayElemAt: ["$resources", 1] },
+                  resource3: { $arrayElemAt: ["$resources", 2] },
+                  resource4: { $arrayElemAt: ["$resources", 3] },
+                  count: {
+                    $cond: {
+                      if: { $isArray: "$resources" },
+                      then: { $size: "$resources" },
+                      else: "0",
+                    },
+                  },
+                },
+              },
+              {
+                $limit: 10,
+              },
+            ],
+            count: [
+              {
+                $group: {
+                  _id: 0,
+                  count: { $sum: 1 },
+                },
+              },
+            ],
+          },
+        },
+      ];
+
+      const collections = await _Collection.aggregate(aggregateArray).exec();
 
       return {
-        collections,
+        error: false,
+        data: collections,
       };
     } catch (err) {
       console.error(err);
       return {
-        status: 500,
-        error: error.message,
+        error: err.message,
       };
     }
   };
