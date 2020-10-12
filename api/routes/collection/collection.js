@@ -12,6 +12,15 @@ router.post('/get-collections', checkIfAuthenticated, async (req, res, next) => 
     }
 });
 
+router.post('/get-collection-titles', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await Collection.getCollectionTitles(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
 router.post('/get-collection-by-id', checkIfAuthenticated, async (req, res, next) => {
     try {
         const response = await Collection.getCollectionById(req.body);
@@ -24,6 +33,15 @@ router.post('/get-collection-by-id', checkIfAuthenticated, async (req, res, next
 router.post('/get-collection-names', checkIfAuthenticated, async (req, res, next) => {
     try {
         const response = await Collection.getCollectionNames(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
+router.post('/get-collection-by-title', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await Collection.getCollectionByTitle(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
@@ -57,27 +75,18 @@ router.post('/delete-resource-from-collection', checkIfAuthenticated, async (req
     }
 });
 
-router.get('/delete-collection/:id', checkIfAuthenticated, async (req, res, next) => {
+router.post('/delete-collection', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await Collection.deleteCollection(req.params.id);
+        const response = await Collection.deleteCollection(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
     }
 });
 
-router.post('/change-collection-title', checkIfAuthenticated, async (req, res, next) => {
+router.post('/edit-collection-details', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await Collection.changeCollectionTitle(req.body);
-        res.status(200).json(response);
-    } catch (err) {
-        console.error(`Error: ${err.message}`);
-    }
-});
-
-router.post('/change-collection-description', checkIfAuthenticated, async (req, res, next) => {
-    try {
-        const response = await Collection.changeCollectionDescription(req.body);
+        const response = await Collection.editCollectionDetails(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);

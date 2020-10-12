@@ -1,27 +1,28 @@
 const mongoose = require("mongoose");
 const _Collection = require("../../models/Collection");
 const CollectionResource = require("../../models/CollectionResource");
-const ResourceService = require("../../services/resource/get");
 const selectFields = "_id username title resources timestamp";
 
 const Collection = (() => {
-  // ? Old
-  // const getCollections = async username => {
-  //   try {
-  //     const collections = await _Collection
-  //       .find({
-  //         username: username
-  //       })
-  //       .exec();
-  //     return {
-  //       collections: collections
-  //     };
-  //   } catch (err) {
-  //     return {
-  //       error: err.message
-  //     };
-  //   }
-  // };
+  const getCollectionTitles = async (data) => {
+    try {
+      const collections = await _Collection
+        .find({
+          username: data.username,
+        })
+        .exec();
+      return {
+        error: false,
+        data: collections,
+      };
+    } catch (err) {
+      console.log(err.message);
+      return {
+        error: true,
+        message: err.message,
+      };
+    }
+  };
 
   const getCollections = async (data) => {
     try {
@@ -224,7 +225,7 @@ const Collection = (() => {
     try {
       const collection = await _Collection
         .findOne({
-          title: data.title,
+          title: { $regex: data.title, $options: "i" },
           username: data.username,
         })
         .exec();
@@ -251,9 +252,14 @@ const Collection = (() => {
       }
       query.skip = size * (pageNo - 1);
       query.limit = size;
-      
+
       const collection = await _Collection
         .aggregate([
+          {
+            $match: {
+              _id: mongoose.Types.ObjectId(data.id),
+            },
+          },
           {
             $lookup: {
               from: "collectionresources",
@@ -271,50 +277,63 @@ const Collection = (() => {
             },
           },
           {
-            $facet: {
-              collection: [
-                {
-                  $sort: {
-                    timestamp: -1,
-                  },
-                },
-                {
-                  $match: {
-                    _id: mongoose.Types.ObjectId(data.id),
-                  },
-                },
-                {
-                  $project: {
-                    _id: 1,
-                    title: 1,
-                    description: 1,
-                    image: 1,
-                    timestamp: 1,
-                    resources: "$resources",
-                    count: {
-                      $cond: {
-                        if: { $isArray: "$resources" },
-                        then: { $size: "$resources" },
-                        else: "0",
+            $lookup: {
+              from: "users",
+              localField: "resources.userId",
+              foreignField: "_id",
+              as: "users",
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              title: 1,
+              description: 1,
+              image: 1,
+              timestamp: 1,
+              resources: {
+                $map: {
+                  input: "$resources",
+                  as: "resource",
+                  in: {
+                    _id: "$$resource._id",
+                    description: "$$resource.description",
+                    lgImage: "$$resource.lgImage",
+                    mdImage: "$$resource.mdImage",
+                    smImage: "$$resource.smImage",
+                    title: "$$resource.title",
+                    type: "$$resource.type",
+                    url: "$$resource.url",
+                    timestamp: "$$resource.timestamp",
+                    recommended_by_count: "$$resource.recommended_by_count",
+                    noImage: "$$resource.noImage",
+                    backgroundColor: "$$resource.backgroundColor",
+                    textColor: "$$resource.textColor",
+                    username: {
+                      $map: {
+                        input: {
+                          $filter: {
+                            input: "$users",
+                            as: "user",
+                            cond: { $eq: ["$$user._id", "$$resource.userId"] },
+                          },
+                        },
+                        as: "filteredUser",
+                        in: {
+                          username: "$$filteredUser.username",
+                        },
                       },
                     },
                   },
                 },
-                {
-                  $skip: query.skip,
+              },
+              count: {
+                $cond: {
+                  if: { $isArray: "$resources" },
+                  then: { $size: "$resources" },
+                  else: "0",
                 },
-                {
-                  $limit: query.limit,
-                },
-              ],
-              count: [
-                {
-                  $group: {
-                    _id: 0,
-                    count: { $sum: 1 },
-                  },
-                },
-              ],
+              },
             },
           },
         ])
@@ -359,58 +378,9 @@ const Collection = (() => {
 
   const createCollectionAndPushResource = async (data) => {
     try {
-      let ifCollectionExists = false;
-      // Check if collection exists
-      const checkIfExists = await getCollectionByTitle({
-        title: data.collectionTitle,
-        username: data.username,
-      });
-
-      if (
-        checkIfExists.collection !== null &&
-        checkIfExists.collection.title === data.collectionTitle
-      ) {
-        ifCollectionExists = true;
-      }
-
-      // ! If collection exists and it's a new resource...
-      // ! push into collection
-      if (ifCollectionExists && data.newResource) {
-        await pushIntoCollection({
-          collectionId: checkIfExists.collection.id,
-          username: data.username,
-          resourceId: data.resourceId,
-          timestamp: data.formData.timestamp,
-        });
-
-        return {
-          message: {
-            error: false,
-            status: 200,
-            data: {
-              message: "Saved to collection!",
-            },
-          },
-        };
-      } else if (ifCollectionExists) {
-        return {
-          message: {
-            error: true,
-            status: 500,
-            message: "Collection already exists!",
-          },
-        };
-      }
-
-      if (data.currentCollectionId) {
-        await deleteResourceFromCollection({
-          collectionId: data.currentCollectionId,
-          resourceId: data.resourceId,
-        });
-      }
-
       // * Create new collection
       const collection = new _Collection({
+        anchorUserId: data.userId,
         username: data.username,
         title: data.collectionTitle,
         description: data.description,
@@ -467,8 +437,35 @@ const Collection = (() => {
   };
 
   const deleteResourceFromCollection = async (data) => {
-    const response = await CollectionResource.findOneAndRemove({
-      anchorCollectionId: data.collectionId,
+    try {
+      console.log(data);
+      const response = await CollectionResource.deleteOne({
+        anchorCollectionId: mongoose.Types.ObjectId(data.collectionId),
+        resourceId: mongoose.Types.ObjectId(data.resourceId),
+      }).exec();
+      console.log(response);
+      if (response) {
+        return {
+          error: false,
+          message: response,
+        };
+      }
+      return {
+        error: true,
+        message: response,
+      };
+    } catch (error) {
+      console.error(err.message);
+      return {
+        error: true,
+        message: err.message,
+      };
+    }
+  };
+
+  // * Duplicate function that uses username instead of collection Id
+  const deleteResourceFromCollection2 = async (data) => {
+    const response = await CollectionResource.deleteMany({
       resourceId: data.resourceId,
     }).exec();
     if (response) {
@@ -477,82 +474,60 @@ const Collection = (() => {
     return false;
   };
 
-  // * Duplicate function that uses username instead of collection Id
-  const deleteResourceFromCollection2 = async (data) => {
-    const response = await _Collection
-      .updateOne(
-        {
-          username: data.username,
-        },
-        {
-          $pull: {
-            resources: data.resourceId,
-          },
-        }
-      )
-      .exec();
-    if (response) {
-      return true;
-    }
-    return false;
-  };
-
-  const deleteCollection = async (id) => {
-    const response = await _Collection
-      .deleteOne({
-        _id: id,
-      })
-      .exec();
-    if (response) {
-      return true;
-    }
-    return false;
-  };
-
-  const changeCollectionTitle = async (data) => {
+  const deleteCollection = async (data) => {
     try {
-      const query = {
-        _id: data.id,
-      };
-      const update = {
-        title: data.title,
-      };
+      const response = await _Collection
+        .deleteMany({
+          _id: mongoose.Types.ObjectId(data.id),
+        })
+        .exec();
 
-      const response = await _Collection.updateOne(query, update).exec();
-      if (response) {
-        return true;
+      const response2 = await CollectionResource.deleteMany({
+        anchorCollectionId: mongoose.Types.ObjectId(data.id),
+      }).exec();
+
+      if (response && response2) {
+        return {
+          error: false,
+          message: "Collection deleted",
+        };
       }
-
-      return false;
+      return {
+        error: true,
+      };
     } catch (err) {
       console.error(err);
       return {
-        status: 500,
-        error: error.message,
+        error: true,
+        message: error.message,
       };
     }
   };
 
-  const changeCollectionDescription = async (data) => {
+  const editCollectionDetails = async (data) => {
     try {
       const query = {
-        _id: data.id,
+        _id: mongoose.Types.ObjectId(data.id),
       };
       const update = {
+        title: data.title,
         description: data.description,
       };
 
       const response = await _Collection.updateOne(query, update).exec();
       if (response) {
-        return true;
+        return {
+          error: false,
+          message: "Collection Edited",
+        };
       }
 
       return false;
     } catch (err) {
       console.error(err);
       return {
-        status: 500,
-        error: error.message,
+        error: true,
+        message: error.message,
       };
     }
   };
@@ -563,43 +538,166 @@ const Collection = (() => {
       if (!options.collection) {
         return;
       }
-      const collections = await _Collection
-        .find({ title: { $regex: `${query}`, $options: "i" } }, selectFields)
-        .limit(10)
-        .exec();
+
+      let aggregateArray = [
+        {
+          $lookup: {
+            from: "collectionresources",
+            localField: "_id",
+            foreignField: "anchorCollectionId",
+            as: "collectionResource",
+          },
+        },
+        {
+          $lookup: {
+            from: "resources",
+            localField: "collectionResource.resourceId",
+            foreignField: "_id",
+            as: "resources",
+          },
+        },
+        {
+          $facet: {
+            collections: [
+              {
+                $sort: {
+                  timestamp: -1,
+                },
+              },
+              {
+                $match: {
+                  title: { $regex: `${query}`, $options: "i" },
+                },
+              },
+              {
+                $project: {
+                  _id: 1,
+                  username: 1,
+                  title: 1,
+                  description: 1,
+                  timestamp: 1,
+                  resource1: { $arrayElemAt: ["$resources", 0] },
+                  resource2: { $arrayElemAt: ["$resources", 1] },
+                  resource3: { $arrayElemAt: ["$resources", 2] },
+                  resource4: { $arrayElemAt: ["$resources", 3] },
+                  count: {
+                    $cond: {
+                      if: { $isArray: "$resources" },
+                      then: { $size: "$resources" },
+                      else: "0",
+                    },
+                  },
+                },
+              },
+              {
+                $limit: 10,
+              },
+            ],
+            count: [
+              {
+                $group: {
+                  _id: 0,
+                  count: { $sum: 1 },
+                },
+              },
+            ],
+          },
+        },
+      ];
+
+      const collections = await _Collection.aggregate(aggregateArray).exec();
 
       return {
-        collections,
+        error: false,
+        data: collections,
       };
     } catch (err) {
       console.error(err);
       return {
-        status: 500,
-        error: error.message,
+        error: err.message,
       };
     }
   };
 
   const searchUserCollections = async (data) => {
     try {
-      const collections = await _Collection
-        .find(
-          {
-            username: data.username,
-            title: { $regex: `${data.title}`, $options: "i" },
+      let aggregateArray = [
+        {
+          $lookup: {
+            from: "collectionresources",
+            localField: "_id",
+            foreignField: "anchorCollectionId",
+            as: "collectionResource",
           },
-          selectFields
-        )
-        .exec();
+        },
+        {
+          $lookup: {
+            from: "resources",
+            localField: "collectionResource.resourceId",
+            foreignField: "_id",
+            as: "resources",
+          },
+        },
+        {
+          $facet: {
+            collections: [
+              {
+                $sort: {
+                  timestamp: -1,
+                },
+              },
+              {
+                $match: {
+                  username: data.username,
+                  title: { $regex: `${data.query}`, $options: "i" },
+                },
+              },
+              {
+                $project: {
+                  _id: 1,
+                  username: 1,
+                  title: 1,
+                  description: 1,
+                  timestamp: 1,
+                  resource1: { $arrayElemAt: ["$resources", 0] },
+                  resource2: { $arrayElemAt: ["$resources", 1] },
+                  resource3: { $arrayElemAt: ["$resources", 2] },
+                  resource4: { $arrayElemAt: ["$resources", 3] },
+                  count: {
+                    $cond: {
+                      if: { $isArray: "$resources" },
+                      then: { $size: "$resources" },
+                      else: "0",
+                    },
+                  },
+                },
+              },
+              {
+                $limit: 10,
+              },
+            ],
+            count: [
+              {
+                $group: {
+                  _id: 0,
+                  count: { $sum: 1 },
+                },
+              },
+            ],
+          },
+        },
+      ];
+
+      const collections = await _Collection.aggregate(aggregateArray).exec();
 
       return {
-        collections,
+        error: false,
+        collections: collections,
       };
     } catch (err) {
       console.error(err);
       return {
-        status: 500,
-        error: error.message,
+        error: err.message,
       };
     }
   };
@@ -623,6 +721,7 @@ const Collection = (() => {
 
   return {
     getCollections,
+    getCollectionTitles,
     getCollectionNameByResourceId,
     getCollectionByTitle,
     getCollectionById,
@@ -632,11 +731,10 @@ const Collection = (() => {
     deleteResourceFromCollection,
     deleteResourceFromCollection2,
     deleteCollection,
-    changeCollectionTitle,
-    changeCollectionDescription,
     searchUserCollections,
     searchCollections,
     checkIfCollectionBelongsToUserLoggedIn,
+    editCollectionDetails,
   };
 })();
 

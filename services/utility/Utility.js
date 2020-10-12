@@ -2,7 +2,7 @@ const sharp = require("sharp");
 const axios = require("axios");
 
 const Utility = (() => {
-  const compressImage = async data => {
+  const compressImage = async (data) => {
     try {
       let parts = data.image.split(";");
       let mimeType = parts[0].split(":")[1];
@@ -12,41 +12,46 @@ const Utility = (() => {
       let output = sharp(image)
         .resize(data.size)
         .toBuffer()
-        .then(resizedImageBuffer => {
+        .then((resizedImageBuffer) => {
           let resizedImageData = resizedImageBuffer.toString("base64");
           let resizedBase64 = `data:${mimeType};base64,${resizedImageData}`;
           return resizedBase64;
         })
-        .catch(error => {
+        .catch((error) => {
           return error;
         });
 
       return output;
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
-  const convertImageFromURLToBase64 = async url => {
+  const convertImageFromURLToBase64 = async (url) => {
     try {
-      let image = await axios.get(url, {responseType: 'arraybuffer'});
+      const image = await axios.request({
+        method: 'GET',
+        url: url,
+        responseType: 'arraybuffer',
+        responseEncoding: 'binary'
+      });
       let mimeType = image.headers["content-type"];
-      let b64SansHeader = Buffer.from(image.data, "binary").toString('base64');
+      let b64SansHeader = new Buffer.from(image.data, "binary").toString("base64");
       let b64 = `data:${mimeType};base64,${b64SansHeader}`;
-
+      
       return b64;
     } catch (err) {
       return {
-        error: err.message
+        error: err.message,
       };
     }
   };
 
   return {
     compressImage,
-    convertImageFromURLToBase64
+    convertImageFromURLToBase64,
   };
 })();
 

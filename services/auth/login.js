@@ -33,6 +33,8 @@ const Login = (() => {
                     username: user.username,
                     userId: user._id,
                     image: user.smImage.link,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
                     expiresIn: 172800000
                 }
             } else {

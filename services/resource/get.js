@@ -8,7 +8,7 @@ const Comment = require("../../models/Comment");
 const ObjectId = mongoose.Types.ObjectId;
 
 const selectFields =
-  "_id username title description smImage.link url timestamp tags recommended_by_count type";
+  "_id username title description smImage.link url timestamp tags recommended_by_count type noImage backgroundColor textColor";
 
 const ResourceGet = (() => {
   const getAllResources = async (data) => {
@@ -76,6 +76,9 @@ const ResourceGet = (() => {
                     deleteHash: 1,
                     timestamp: 1,
                     recommended_by_count: 1,
+                    noImage: 1,
+                    backgroundColor: 1,
+                    textColor: 1,
                   },
                 },
                 {
@@ -278,6 +281,7 @@ const ResourceGet = (() => {
                 {
                   $project: {
                     _id: 1,
+                    username: "$user.username",
                     userId: 1,
                     url: 1,
                     title: 1,
@@ -287,6 +291,9 @@ const ResourceGet = (() => {
                     mdImage: 1,
                     timestamp: 1,
                     recommended_by_count: 1,
+                    noImage: 1,
+                    backgroundColor: 1,
+                    textColor: 1,
                   },
                 },
                 {
@@ -313,8 +320,6 @@ const ResourceGet = (() => {
           },
         ])
         .exec();
-
-      console.log(resources);
 
       return {
         resources: resources[0].resources,
@@ -355,9 +360,13 @@ const ResourceGet = (() => {
             description: 1,
             lgImage: 1,
             smImage: 1,
+            mdImage: 1,
             deleteHash: 1,
             timestamp: 1,
             recommended_by_count: 1,
+            noImage: 1,
+            backgroundColor: 1,
+            textColor: 1,
           },
         },
       ]);
@@ -506,29 +515,128 @@ const ResourceGet = (() => {
         const regex = [new RegExp(sansHash, "i")];
 
         // * Search for resources with tag
+
         const resources = await _Resource
-          .find({ tags: { $in: regex } }, selectFields)
-          .limit(10)
-          .sort({
-            recommended_by_count: recommend ? -1 : 1,
-            timestamp: recent ? -1 : 1,
-          })
+          .aggregate([
+            {
+              $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
+                as: "user",
+              },
+            },
+            {
+              $facet: {
+                resources: [
+                  {
+                    $sort: {
+                      timestamp: -1,
+                    },
+                  },
+                  {
+                    $match: { tags: { $in: regex } },
+                  },
+                  {
+                    $project: {
+                      _id: 1,
+                      username: "$user.username",
+                      userId: 1,
+                      url: 1,
+                      title: 1,
+                      type: 1,
+                      tags: 1,
+                      description: 1,
+                      mdImage: 1,
+                      smImage: 1,
+                      xsImage: 1,
+                      timestamp: 1,
+                      recommended_by_count: 1,
+                      noImage: 1,
+                      backgroundColor: 1,
+                      textColor: 1,
+                    },
+                  },
+                  {
+                    $limit: 10,
+                  },
+                  {
+                    $sort: {
+                      recommended_by_count: recommend ? -1 : 1,
+                      timestamp: recent ? -1 : 1,
+                    },
+                  },
+                ],
+              },
+            },
+          ])
           .exec();
         return {
-          resources,
+          error: false,
+          data: resources,
         };
       }
 
       const resources = await _Resource
-        .find({ title: { $regex: `${query}`, $options: "i" } }, selectFields)
-        .limit(10)
-        .sort({
-          recommended_by_count: recommend ? -1 : 1,
-          timestamp: recent ? -1 : 1,
-        })
+        .aggregate([
+          {
+            $lookup: {
+              from: "users",
+              localField: "userId",
+              foreignField: "_id",
+              as: "user",
+            },
+          },
+          {
+            $facet: {
+              resources: [
+                {
+                  $sort: {
+                    timestamp: -1,
+                  },
+                },
+                {
+                  $match: {
+                    title: { $regex: `${query}`, $options: "i" },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    username: "$user.username",
+                    userId: 1,
+                    url: 1,
+                    title: 1,
+                    type: 1,
+                    tags: 1,
+                    description: 1,
+                    mdImage: 1,
+                    smImage: 1,
+                    lgImage: 1,
+                    timestamp: 1,
+                    recommended_by_count: 1,
+                    noImage: 1,
+                    backgroundColor: 1,
+                    textColor: 1,
+                  },
+                },
+                {
+                  $limit: 10,
+                },
+                {
+                  $sort: {
+                    recommended_by_count: recommend ? -1 : 1,
+                    timestamp: recent ? -1 : 1,
+                  },
+                },
+              ],
+            },
+          },
+        ])
         .exec();
       return {
-        resources,
+        error: false,
+        data: resources,
       };
     } catch (err) {
       return {
@@ -539,36 +647,73 @@ const ResourceGet = (() => {
 
   const searchUserResources = async (data) => {
     try {
-      let query = data.query;
-      if (query.charAt(0) === "#") {
-        const sansHash = query.replace("#", "");
-        const regex = [new RegExp(sansHash, "i")];
-        // * Search for resources with tag
-        const resources = await _Resource
-          .find(
-            {
-              username: data.username,
-              tags: { $in: regex },
-            },
-            selectFields
-          )
-          .exec();
-        return {
-          resources,
-        };
-      }
-
       const resources = await _Resource
-        .find(
+        .aggregate([
           {
-            username: data.username,
-            title: { $regex: `${query}`, $options: "i" },
+            $lookup: {
+              from: "users",
+              localField: "userId",
+              foreignField: "_id",
+              as: "user",
+            },
           },
-          selectFields
-        )
+          {
+            $facet: {
+              resources: [
+                {
+                  $sort: {
+                    timestamp: -1,
+                  },
+                },
+                {
+                  $match: {
+                    userId: ObjectId(data.userId),
+                    title: { $regex: `${data.query}`, $options: "i" },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    username: "$user.username",
+                    userId: 1,
+                    url: 1,
+                    title: 1,
+                    type: 1,
+                    tags: 1,
+                    description: 1,
+                    mdImage: 1,
+                    timestamp: 1,
+                    recommended_by_count: 1,
+                    noImage: 1,
+                    backgroundColor: 1,
+                    textColor: 1,
+                  },
+                },
+                {
+                  $limit: 10,
+                },
+              ],
+              count: [
+                {
+                  $match: {
+                    userId: ObjectId(data.userId),
+                  },
+                },
+                {
+                  $group: {
+                    _id: 0,
+                    count: { $sum: 1 },
+                  },
+                },
+              ],
+            },
+          },
+        ])
         .exec();
+
       return {
-        resources,
+        resources: resources[0].resources,
+        count: resources[0].count[0].count,
       };
     } catch (err) {
       return {

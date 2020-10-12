@@ -25,6 +25,12 @@ const Signup = (() => {
                         anchorUserId: user.id,
                         userId: user.id
                     });
+
+                    // Add everest user to follow list
+                    await UserService.followUser({
+                        anchorUserId: user.id,
+                        userId: "5e54d695de6b3f0c58da7de1"
+                    });
                     return {
                         status: 200,
                         message: "Signup successful",

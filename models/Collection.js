@@ -1,5 +1,10 @@
 var mongoose = require('mongoose');
 var CollectionSchema = new mongoose.Schema({
+    anchorUserId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
     username: {
         type: String,
         required: true,
@@ -15,7 +20,22 @@ var CollectionSchema = new mongoose.Schema({
         required: false,
         trim: true
     },
-    image: {
+    xsImage: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    smImage: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    mdImage: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    lgImage: {
         type: String,
         required: false,
         trim: true
