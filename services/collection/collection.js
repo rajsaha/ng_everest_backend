@@ -465,18 +465,9 @@ const Collection = (() => {
 
   // * Duplicate function that uses username instead of collection Id
   const deleteResourceFromCollection2 = async (data) => {
-    const response = await _Collection
-      .updateOne(
-        {
-          username: data.username,
-        },
-        {
-          $pull: {
-            resources: data.resourceId,
-          },
-        }
-      )
-      .exec();
+    const response = await CollectionResource.deleteMany({
+      resourceId: data.resourceId,
+    }).exec();
     if (response) {
       return true;
     }

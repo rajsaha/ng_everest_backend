@@ -611,6 +611,8 @@ const ResourceGet = (() => {
                     tags: 1,
                     description: 1,
                     mdImage: 1,
+                    smImage: 1,
+                    lgImage: 1,
                     timestamp: 1,
                     recommended_by_count: 1,
                     noImage: 1,
