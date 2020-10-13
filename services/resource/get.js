@@ -47,6 +47,22 @@ const ResourceGet = (() => {
             },
           },
           {
+            $lookup: {
+              from: "recommends",
+              localField: "_id",
+              foreignField: "resourceId",
+              as: "recommends",
+            },
+          },
+          {
+            $lookup: {
+              from: "collectionresources",
+              localField: "_id",
+              foreignField: "resourceId",
+              as: "collectionresources",
+            },
+          },
+          {
             $facet: {
               resources: [
                 {
@@ -79,6 +95,24 @@ const ResourceGet = (() => {
                     noImage: 1,
                     backgroundColor: 1,
                     textColor: 1,
+                    isLikedByUser: {
+                      $filter: {
+                        input: "$recommends",
+                        as: "recs",
+                        cond: {
+                          $eq: ["$$recs.userId", ObjectId(data.userId)],
+                        },
+                      },
+                    },
+                    isInCollection: {
+                      $filter: {
+                        input: "$collectionresources",
+                        as: "colres",
+                        cond: {
+                          $eq: ["$$colres.anchorUserId", ObjectId(data.userId)],
+                        },
+                      },
+                    },
                   },
                 },
                 {

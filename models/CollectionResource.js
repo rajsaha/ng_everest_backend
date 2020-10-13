@@ -5,6 +5,11 @@ var CollectionResourceSchema = new mongoose.Schema({
     ref: "Collection",
     required: true
   },
+  anchorUserId: {
+    type:mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
   resourceId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Resource",

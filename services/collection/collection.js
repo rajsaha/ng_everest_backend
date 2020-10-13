@@ -354,6 +354,7 @@ const Collection = (() => {
       const collectionResource = new CollectionResource({
         anchorCollectionId: data.collectionId,
         resourceId: data.resourceId,
+        anchorUserId: data.userId
       });
 
       await collectionResource.save();
@@ -391,6 +392,7 @@ const Collection = (() => {
       const newCollectionResource = new CollectionResource({
         anchorCollectionId: collection.id,
         resourceId: data.resourceId,
+        anchorUserId: data.userId
       });
 
       await newCollectionResource.save();
@@ -438,7 +440,6 @@ const Collection = (() => {
 
   const deleteResourceFromCollection = async (data) => {
     try {
-      console.log(data);
       const response = await CollectionResource.deleteOne({
         anchorCollectionId: mongoose.Types.ObjectId(data.collectionId),
         resourceId: mongoose.Types.ObjectId(data.resourceId),

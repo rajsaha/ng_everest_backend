@@ -179,6 +179,7 @@ const ResourceShare = (() => {
           await CollectionService.pushIntoCollection({
             collectionId: data.collectionData.collectionId,
             resourceId: resource.id,
+            anchorUserId: data.formData.userId
           });
         } else {
           await CollectionService.createCollectionAndPushResource({
