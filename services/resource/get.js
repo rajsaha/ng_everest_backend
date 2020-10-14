@@ -63,6 +63,14 @@ const ResourceGet = (() => {
             },
           },
           {
+            $lookup: {
+              from: "comments",
+              localField: "_id",
+              foreignField: "resourceId",
+              as: "comments",
+            },
+          },
+          {
             $facet: {
               resources: [
                 {
@@ -107,12 +115,14 @@ const ResourceGet = (() => {
                     isInCollection: {
                       $filter: {
                         input: "$collectionresources",
-                        as: "colres",
+                        as: "crs",
                         cond: {
-                          $eq: ["$$colres.anchorUserId", ObjectId(data.userId)],
+                          $eq: ["$$crs.anchorUserId", ObjectId(data.userId)],
                         },
                       },
                     },
+                    comments: { $slice: ["$comments", 0, 5] },
+                    commentsCount: { $size: ["$comments"] }
                   },
                 },
                 {
