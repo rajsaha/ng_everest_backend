@@ -391,6 +391,30 @@ const ResourceGet = (() => {
           },
         },
         {
+          $lookup: {
+            from: "recommends",
+            localField: "_id",
+            foreignField: "resourceId",
+            as: "recommends",
+          },
+        },
+        {
+          $lookup: {
+            from: "collectionresources",
+            localField: "_id",
+            foreignField: "resourceId",
+            as: "collectionresources",
+          },
+        },
+        {
+          $lookup: {
+            from: "comments",
+            localField: "_id",
+            foreignField: "resourceId",
+            as: "comments",
+          },
+        },
+        {
           $project: {
             _id: 1,
             username: "$user.username",
@@ -411,6 +435,26 @@ const ResourceGet = (() => {
             noImage: 1,
             backgroundColor: 1,
             textColor: 1,
+            isLikedByUser: {
+              $filter: {
+                input: "$recommends",
+                as: "recs",
+                cond: {
+                  $eq: ["$$recs.userId", ObjectId(data.userId)],
+                },
+              },
+            },
+            isInCollection: {
+              $filter: {
+                input: "$collectionresources",
+                as: "crs",
+                cond: {
+                  $eq: ["$$crs.anchorUserId", ObjectId(data.userId)],
+                },
+              },
+            },
+            comments: { $slice: ["$comments", 0, 5] },
+            commentsCount: { $size: ["$comments"] }
           },
         },
       ]);
