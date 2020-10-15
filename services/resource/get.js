@@ -461,7 +461,6 @@ const ResourceGet = (() => {
                 },
               },
             },
-            comments: { $slice: ["$comments", 0, 5] },
             commentsCount: { $size: ["$comments"] },
           },
         },
