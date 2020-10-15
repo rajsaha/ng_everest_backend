@@ -86,6 +86,7 @@ const ResourceGet = (() => {
                 {
                   $project: {
                     _id: 1,
+                    userId: "$user.userId",
                     username: "$user.username",
                     userImage: "$user.smImage.link",
                     firstName: "$user.firstName",
@@ -121,8 +122,7 @@ const ResourceGet = (() => {
                         },
                       },
                     },
-                    comments: { $slice: ["$comments", 0, 5] },
-                    commentsCount: { $size: ["$comments"] }
+                    commentsCount: { $size: ["$comments"] },
                   },
                 },
                 {
@@ -195,6 +195,14 @@ const ResourceGet = (() => {
 
       const comments = await Comment.aggregate([
         {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        {
           $facet: {
             comments: [
               {
@@ -204,12 +212,12 @@ const ResourceGet = (() => {
               },
               {
                 $project: {
-                  username: 1,
-                  firstName: 1,
-                  lastName: 1,
+                  username: "$user.username",
+                  firstName: "$user.firstName",
+                  lastName: "$user.lastName",
                   content: 1,
                   timestamp: 1,
-                  image: 1,
+                  image: { $ifNull: ["$user.smImage.link", ""] },
                 },
               },
               {
@@ -454,7 +462,7 @@ const ResourceGet = (() => {
               },
             },
             comments: { $slice: ["$comments", 0, 5] },
-            commentsCount: { $size: ["$comments"] }
+            commentsCount: { $size: ["$comments"] },
           },
         },
       ]);

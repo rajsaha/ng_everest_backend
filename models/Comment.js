@@ -1,34 +1,23 @@
 var mongoose = require("mongoose");
 var CommentSchema = new mongoose.Schema({
   resourceId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Resource',
-      required: true
-  },   
-  username: {
-    type: String,
-    trim: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Resource",
+    required: true,
   },
-  firstName: {
-    type: String,
-    trim: true
-  },
-  lastName: {
-    type: String,
-    trim: true
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
   },
   content: {
     type: String,
-    trim: true
+    trim: true,
   },
   timestamp: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
-  image: {
-    type: String,
-    trim: true
-  }
 });
 
 var Comment = mongoose.model("Comment", CommentSchema);

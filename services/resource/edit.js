@@ -190,9 +190,7 @@ const EditResource = (() => {
       const comment = new Comment({
         _id: new mongoose.Types.ObjectId(),
         resourceId: data.resourceId,
-        username: data.username,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        userId: data.userId,
         content: data.comment,
         timestamp: Date.now(),
         image: data.smImage,
@@ -201,13 +199,41 @@ const EditResource = (() => {
       const response = await comment.save();
 
       if (response) {
+        let temp = await Comment.aggregate([
+          {
+            $lookup: {
+              from: "users",
+              localField: "userId",
+              foreignField: "_id",
+              as: "user",
+            },
+          },
+          {
+            $match: {
+              _id: comment._id
+            },
+          },
+          {
+            $project: {
+              firstName: "$user.firstName",
+              lastName: "$user.lastName",
+              username: "$user.username",
+              image: { $ifNull: ["$user.smImage.link", ""] },
+              content: data.comment,
+              timestamp: Date.now()
+            }
+          }
+        ]).exec();
         return {
-          status: true,
-          comment,
+          error: false,
+          data: temp,
         };
       }
 
-      return false;
+      return {
+        error: true,
+        message: response
+      };
     } catch (err) {
       console.log(err);
       return {
