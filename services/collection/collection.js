@@ -352,9 +352,9 @@ const Collection = (() => {
     try {
       // * Create new collection resource document
       const collectionResource = new CollectionResource({
-        anchorCollectionId: data.collectionId,
+        anchorCollectionId: data.anchorCollectionId,
         resourceId: data.resourceId,
-        anchorUserId: data.userId
+        anchorUserId: data.anchorUserId
       });
 
       await collectionResource.save();
@@ -362,7 +362,6 @@ const Collection = (() => {
       return {
         message: {
           error: false,
-          status: 200,
           data: {
             message: "Saved to collection!",
           },
@@ -371,8 +370,8 @@ const Collection = (() => {
     } catch (error) {
       console.error(error.message);
       return {
-        status: 500,
-        error: error.message,
+        error: true,
+        message: error.message,
       };
     }
   };

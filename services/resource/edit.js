@@ -120,24 +120,27 @@ const EditResource = (() => {
 
   const addResourceToCollection = async (data) => {
     try {
-      // * Delete resource from existing collection
-      if (data.currentCollectionId) {
-        await CollectionService.deleteResourceFromCollection({
-          collectionId: data.currentCollectionId,
-          resourceId: data.resourceId
-        });
-      }
-
-      await CollectionService.pushIntoCollection({
-        collectionId: data.collectionId,
-        resourceId: data.resourceId
+      const response = await CollectionService.pushIntoCollection({
+        anchorCollectionId: data.collectionId,
+        resourceId: data.resourceId,
+        anchorUserId: data.userId
       });
 
-      return true;
+      if (!response.error) {
+        return {
+          error: false,
+          data: {
+            message: "Resource added to collection"
+          }
+        }
+      } else {
+        throw new Error(response.message);
+      }
     } catch (err) {
       console.log(err);
       return {
-        error: err.message,
+        error: true,
+        message: err.message
       };
     }
   };
