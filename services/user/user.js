@@ -117,7 +117,9 @@ const Profile = (() => {
       let followerIds = [];
 
       for (let item of followers) {
-        followerIds.push(item.userId);
+        if (item.userId !== data.userId) {
+          followerIds.push(item.userId);
+        }
       }
 
       const followerObjects = await User.aggregate([
