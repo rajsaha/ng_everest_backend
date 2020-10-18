@@ -840,26 +840,26 @@ const Profile = (() => {
     } catch (err) {
       console.error(err);
       return {
-        status: 500,
-        error: error.message,
+        error: err.message,
       };
     }
   };
 
   const globalSearch = async (data) => {
     try {
+      const ifTagSerach = data.query.includes("%23") ? true : false;
       const query = decodeURIComponent(data.query);
       const options = data.options;
 
       // Resource only
-      if (query.charAt(0) === "#") {
+      if (ifTagSerach) {
         const searchResult = await ResourceService.searchResources(
           query,
           options
         );
         return {
           resourceOnly: true,
-          resources: searchResult.resources,
+          resources: searchResult,
         };
       }
 

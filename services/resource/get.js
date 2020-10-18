@@ -605,7 +605,8 @@ const ResourceGet = (() => {
         recommend = true;
       }
 
-      if (query.charAt(0) === "#") {
+
+      if (query.charAt(0) == "#") {
         const sansHash = query.replace("#", "");
         const regex = [new RegExp(sansHash, "i")];
 
