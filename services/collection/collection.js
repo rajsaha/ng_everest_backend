@@ -110,7 +110,7 @@ const Collection = (() => {
               count: [
                 {
                   $group: {
-                    _id: 0,
+                    _id: null,
                     count: { $sum: 1 },
                   },
                 },
@@ -179,7 +179,7 @@ const Collection = (() => {
               count: [
                 {
                   $group: {
-                    _id: 0,
+                    _id: null,
                     count: { $sum: 1 },
                   },
                 },
@@ -190,10 +190,12 @@ const Collection = (() => {
       }
 
       const collections = await _Collection.aggregate(aggregateArray).exec();
+      const numOfUserCollections = await _Collection.find({ username: data.username }).count();
 
       return {
         error: false,
         collections: collections,
+        numOfUserCollections
       };
     } catch (err) {
       return {
