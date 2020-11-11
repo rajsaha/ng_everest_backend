@@ -6,6 +6,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const compression = require('compression');
 
 // Routes
 const loginRoute = require("./api/routes/auth/login");
@@ -38,6 +39,7 @@ try {
     console.error(error);
 }
 
+app.use(compression());
 app.use(morgan("dev"));
 app.use(cors());
 app.use(

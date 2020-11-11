@@ -190,7 +190,7 @@ const Collection = (() => {
       }
 
       const collections = await _Collection.aggregate(aggregateArray).exec();
-      const numOfUserCollections = await _Collection.find({ username: data.username }).count();
+      const numOfUserCollections = await _Collection.find({ username: data.username }).countDocuments();
 
       return {
         error: false,

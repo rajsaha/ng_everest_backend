@@ -374,8 +374,9 @@ const ResourceGet = (() => {
         .exec();
 
       return {
+        error: false,
         resources: resources[0].resources,
-        count: resources[0].count[0].count,
+        count: resources[0].count.length > 0 ? resources[0].count[0].count : 0,
       };
     } catch (err) {
       return {

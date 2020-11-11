@@ -144,7 +144,7 @@ const Profile = (() => {
       const isLoggedInUserFollowingParamUser = await Following.find({
         userId: ObjectId(data.userId),
         anchorUserId: ObjectId(data.loggedInUserId),
-      }).count();
+      }).countDocuments();
 
       return {
         userData: user[0],
