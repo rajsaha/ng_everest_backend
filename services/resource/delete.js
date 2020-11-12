@@ -1,6 +1,9 @@
+const mongoose = require("mongoose");
 const _Resource = require("../../models/Resource");
 const Imgur = require("../imgur/imgur");
 const CollectionService = require("../collection/collection");
+const Comment = require("../../models/Comment");
+const ObjectId = mongoose.Types.ObjectId;
 
 const DeleteResource = (() => {
   const deleteResource = async (data) => {
@@ -16,6 +19,7 @@ const DeleteResource = (() => {
           CollectionService.deleteResourceFromCollection2({
             resourceId: data.id,
           }),
+          deleteResourceComments({ id: data.id})
         ]);
 
         return {
@@ -75,6 +79,17 @@ const DeleteResource = (() => {
       return false;
     }
   };
+
+  const deleteResourceComments = async (data) => {
+    try {
+      const response = await Comment.deleteMany({ resourceId: ObjectId(data.id) }).exec();
+      if (response) {
+        return true;
+      }
+    } catch (err) {
+      return false;
+    }
+  }
 
   return {
     deleteResource,
