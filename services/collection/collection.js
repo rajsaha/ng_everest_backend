@@ -280,6 +280,14 @@ const Collection = (() => {
           },
           {
             $lookup: {
+              from: "comments",
+              localField: "collectionResource.resourceId",
+              foreignField: "resourceId",
+              as: "comments"
+            }
+          },
+          {
+            $lookup: {
               from: "users",
               localField: "resources.userId",
               foreignField: "_id",
@@ -323,6 +331,25 @@ const Collection = (() => {
                         as: "filteredUser",
                         in: {
                           username: "$$filteredUser.username",
+                        },
+                      },
+                    },
+                    commentCount: {
+                      $map: {
+                        input: {
+                          $filter: {
+                            input: "$comments",
+                            as: "comment",
+                            cond: { $eq: ["$$comment.resourceId", "$$resource._id"] },
+                          },
+                        },
+                        as: "filteredComment",
+                        in: {
+                          $cond: {
+                            if: { $isArray: "$filteredComment" },
+                            then: { $size: "$filteredComment" },
+                            else: "0",
+                          },
                         },
                       },
                     },

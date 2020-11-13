@@ -770,6 +770,14 @@ const ResourceGet = (() => {
             },
           },
           {
+            $lookup: {
+              from: "comments",
+              localField: "_id",
+              foreignField: "resourceId",
+              as: "comments"
+            }
+          },
+          {
             $facet: {
               resources: [
                 {
@@ -799,6 +807,13 @@ const ResourceGet = (() => {
                     noImage: 1,
                     backgroundColor: 1,
                     textColor: 1,
+                    commentCount: {
+                      $cond: {
+                        if: { $isArray: "$comments" },
+                        then: { $size: "$comments" },
+                        else: "0",
+                      },
+                    },
                   },
                 },
                 {
