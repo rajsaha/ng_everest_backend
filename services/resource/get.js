@@ -404,7 +404,7 @@ const ResourceGet = (() => {
     try {
       const resource = await _Resource.aggregate([
         {
-          $match: { _id: ObjectId(data) },
+          $match: { _id: ObjectId(data.resourceId) },
         },
         {
           $lookup: {

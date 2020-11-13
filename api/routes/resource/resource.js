@@ -79,9 +79,9 @@ router.get('/get/resource-image/:resourceId', checkIfAuthenticated, async (req, 
     }
 });
 
-router.get('/get/one/:id', checkIfAuthenticated, async (req, res, next) => {
+router.post('/get/one', checkIfAuthenticated, async (req, res, next) => {
     try {
-        const response = await ResourceGet.getResource(req.params.id);
+        const response = await ResourceGet.getResource({ resourceId: req.body.resourceId, userId: req.body.userId });
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);
