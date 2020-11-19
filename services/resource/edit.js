@@ -190,6 +190,12 @@ const EditResource = (() => {
 
   const addComment = async (data) => {
     try {
+      if (!data.comment) {
+        return {
+          error: true,
+          message: "Comment missing"
+        }
+      } 
       const comment = new Comment({
         _id: new mongoose.Types.ObjectId(),
         resourceId: data.resourceId,

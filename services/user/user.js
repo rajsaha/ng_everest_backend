@@ -117,7 +117,7 @@ const Profile = (() => {
       let followerIds = [];
 
       for (let item of followers) {
-        if (item.userId !== data.userId) {
+        if (!item.anchorUserId.equals(item.userId)) {
           followerIds.push(item.userId);
         }
       }
