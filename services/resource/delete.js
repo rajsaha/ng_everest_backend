@@ -3,6 +3,7 @@ const _Resource = require("../../models/Resource");
 const Imgur = require("../imgur/imgur");
 const CollectionService = require("../collection/collection");
 const Comment = require("../../models/Comment");
+const Recommend = require("../../models/Recommend");
 const ObjectId = mongoose.Types.ObjectId;
 
 const DeleteResource = (() => {
@@ -19,7 +20,8 @@ const DeleteResource = (() => {
           CollectionService.deleteResourceFromCollection2({
             resourceId: data.id,
           }),
-          deleteResourceComments({ id: data.id})
+          deleteResourceComments({ id: data.id}),
+          deleteResourceRecommends({ id: data.id })
         ]);
 
         return {
@@ -83,6 +85,17 @@ const DeleteResource = (() => {
   const deleteResourceComments = async (data) => {
     try {
       const response = await Comment.deleteMany({ resourceId: ObjectId(data.id) }).exec();
+      if (response) {
+        return true;
+      }
+    } catch (err) {
+      return false;
+    }
+  }
+
+  const deleteResourceRecommends = async (data) => {
+    try {
+      const response = await Recommend.deleteMany({ resourceId: ObjectId(data.id) }).exec();
       if (response) {
         return true;
       }
