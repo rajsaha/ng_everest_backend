@@ -446,7 +446,8 @@ const Collection = (() => {
   const checkForResourceInAnyCollection = async (data) => {
     try {
       const response = await CollectionResource.find({
-        resourceId: data.id,
+        resourceId: mongoose.Types.ObjectId(data.id),
+        anchorUserId: mongoose.Types.ObjectId(data.userId)
       }).exec();
       if (response.length > 0) {
         return {
