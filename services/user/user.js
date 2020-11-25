@@ -18,7 +18,9 @@ const selectFields =
 const Profile = (() => {
   const getUserId = async (username) => {
     try {
-      const user = await User.findOne({ username: username }).exec();
+      const user = await User.findOne({
+        username: username
+      }).exec();
       let id = null;
       if (user) {
         id = user._id;
@@ -33,8 +35,7 @@ const Profile = (() => {
   };
   const getUserData = async (data) => {
     try {
-      const user = await User.aggregate([
-        {
+      const user = await User.aggregate([{
           $lookup: {
             from: "followers",
             localField: "_id",
@@ -84,17 +85,23 @@ const Profile = (() => {
             },
             followingCount: {
               $size: {
-                $cond: [{ $isArray: "$following" }, "$following", []],
+                $cond: [{
+                  $isArray: "$following"
+                }, "$following", []],
               },
             },
             followerCount: {
               $size: {
-                $cond: [{ $isArray: "$follower" }, "$follower", []],
+                $cond: [{
+                  $isArray: "$follower"
+                }, "$follower", []],
               },
             },
             collectionCount: {
               $size: {
-                $cond: [{ $isArray: "$collection" }, "$collection", []],
+                $cond: [{
+                  $isArray: "$collection"
+                }, "$collection", []],
               },
             },
             following: {
@@ -122,10 +129,11 @@ const Profile = (() => {
         }
       }
 
-      const followerObjects = await User.aggregate([
-        {
+      const followerObjects = await User.aggregate([{
           $match: {
-            _id: { $in: [...followerIds] },
+            _id: {
+              $in: [...followerIds]
+            },
           },
         },
         {
@@ -162,7 +170,9 @@ const Profile = (() => {
 
   const getUserResourceTypeCount = async (userId) => {
     try {
-      const resources = await Resource.find({ userId: userId })
+      const resources = await Resource.find({
+          userId: userId
+        })
         .select("type")
         .exec();
 
@@ -257,16 +267,13 @@ const Profile = (() => {
 
   const removeInterest = async (data) => {
     try {
-      const user = await User.updateOne(
-        {
-          _id: data.id,
+      const user = await User.updateOne({
+        _id: data.id,
+      }, {
+        $pull: {
+          interests: data.interest,
         },
-        {
-          $pull: {
-            interests: data.interest,
-          },
-        }
-      ).exec();
+      }).exec();
       return {
         message: `${data.interest} removed`,
       };
@@ -424,8 +431,8 @@ const Profile = (() => {
   const getProfilePhoto = async (username) => {
     try {
       const user = await User.findOne({
-        username: username,
-      })
+          username: username,
+        })
         .select("mdImage")
         .exec();
       return {
@@ -469,8 +476,7 @@ const Profile = (() => {
           },
         };
 
-        await User.updateOne(
-          {
+        await User.updateOne({
             username: data.username,
           },
           update
@@ -497,8 +503,8 @@ const Profile = (() => {
     try {
       // * Get user image
       const user = await User.findOne({
-        username,
-      })
+          username,
+        })
         .select("lgImage mdImage smImage xsImage")
         .exec();
 
@@ -694,7 +700,9 @@ const Profile = (() => {
 
   const getUserFollowers = async (username) => {
     try {
-      const following = await User.findOne({ username })
+      const following = await User.findOne({
+          username
+        })
         .select("following")
         .exec();
       if (following) {
@@ -712,8 +720,7 @@ const Profile = (() => {
 
   const getFollowersFollowing = async (data) => {
     try {
-      const followers = await Follower.aggregate([
-        {
+      const followers = await Follower.aggregate([{
           $match: {
             anchorUserId: ObjectId(data.userId),
           },
@@ -746,8 +753,7 @@ const Profile = (() => {
         },
       ]).exec();
 
-      const followings = await Following.aggregate([
-        {
+      const followings = await Following.aggregate([{
           $match: {
             anchorUserId: ObjectId(data.userId),
           },
@@ -804,13 +810,26 @@ const Profile = (() => {
       if (!options.user) {
         return;
       }
-      const users = await User.aggregate([
-        {
+      const users = await User.aggregate([{
           $match: {
-            $or: [
-              { firstName: { $regex: query, $options: "i" } },
-              { lasttName: { $regex: query, $options: "i" } },
-              { username: { $regex: query, $options: "i" } },
+            $or: [{
+                firstName: {
+                  $regex: query,
+                  $options: "i"
+                }
+              },
+              {
+                lasttName: {
+                  $regex: query,
+                  $options: "i"
+                }
+              },
+              {
+                username: {
+                  $regex: query,
+                  $options: "i"
+                }
+              },
             ],
           },
         },
@@ -888,10 +907,9 @@ const Profile = (() => {
   const getUserInterests = async (data) => {
     try {
       const user = await User.findById(ObjectId(data.userId)).select("interests").exec();
-      if (user) {
-        return {
-          user
-        }
+
+      return {
+        user
       }
     } catch (err) {
       return {

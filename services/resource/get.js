@@ -4,7 +4,6 @@ const _Resource = require("../../models/Resource");
 const User = require("../../models/User");
 const Following = require("../../models/Following");
 const Comment = require("../../models/Comment");
-const UserService = require("../user/user");
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -166,7 +165,7 @@ const ResourceGet = (() => {
   const getExploreFeed = async (data) => {
     try {
       // Get users that current logged in user follows
-      const interests = await UserService.getUserInterests({ userId: data.userId });
+      const interests = await User.findById(ObjectId(data.userId)).select("interests").exec();
       let interestsArray = [];
 
       for (let interest of interests.interests) {
@@ -230,7 +229,7 @@ const ResourceGet = (() => {
                 },
                 {
                   $match: {
-                    userId: query.userIds,
+                    tags: query.tags,
                   },
                 },
                 {
@@ -286,7 +285,7 @@ const ResourceGet = (() => {
               ],
               count: [{
                   $match: {
-                    userId: query.userIds,
+                    tags: query.tags,
                   },
                 },
                 {
@@ -304,7 +303,7 @@ const ResourceGet = (() => {
         .exec();
 
       return {
-        resources: resources[0].resources,
+        resources: resources[0].resources ? resources[0].resources : [],
         count: resources[0].count[0].count,
       };
     } catch (err) {
