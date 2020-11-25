@@ -885,6 +885,21 @@ const Profile = (() => {
     }
   };
 
+  const getUserInterests = async (data) => {
+    try {
+      const user = await User.findById(ObjectId(data.userId)).select("interests").exec();
+      if (user) {
+        return {
+          user
+        }
+      }
+    } catch (err) {
+      return {
+        error: err.message,
+      };
+    }
+  }
+
   return {
     getUserId,
     getUserData,
@@ -904,6 +919,7 @@ const Profile = (() => {
     getUserFollowers,
     globalSearch,
     getFollowersFollowing,
+    getUserInterests
   };
 })();
 

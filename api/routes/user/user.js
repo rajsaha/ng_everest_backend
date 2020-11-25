@@ -159,4 +159,13 @@ router.post('/get-followers-following', async (req, res, next) => {
     }
 });
 
+router.post('/get-user-interests', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await User.getUserInterests(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
 module.exports = router;

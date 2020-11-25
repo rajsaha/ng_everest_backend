@@ -4,6 +4,7 @@ const _Resource = require("../../models/Resource");
 const User = require("../../models/User");
 const Following = require("../../models/Following");
 const Comment = require("../../models/Comment");
+const UserService = require("../user/user");
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -37,8 +38,7 @@ const ResourceGet = (() => {
       };
 
       const resources = await _Resource
-        .aggregate([
-          {
+        .aggregate([{
             $lookup: {
               from: "users",
               localField: "userId",
@@ -72,8 +72,7 @@ const ResourceGet = (() => {
           },
           {
             $facet: {
-              resources: [
-                {
+              resources: [{
                   $sort: {
                     timestamp: -1,
                   },
@@ -122,7 +121,9 @@ const ResourceGet = (() => {
                         },
                       },
                     },
-                    commentsCount: { $size: ["$comments"] },
+                    commentsCount: {
+                      $size: ["$comments"]
+                    },
                   },
                 },
                 {
@@ -132,8 +133,7 @@ const ResourceGet = (() => {
                   $limit: query.limit,
                 },
               ],
-              count: [
-                {
+              count: [{
                   $match: {
                     userId: query.userIds,
                   },
@@ -141,7 +141,9 @@ const ResourceGet = (() => {
                 {
                   $group: {
                     _id: 0,
-                    count: { $sum: 1 },
+                    count: {
+                      $sum: 1
+                    },
                   },
                 },
               ],
@@ -161,9 +163,162 @@ const ResourceGet = (() => {
     }
   };
 
+  const getExploreFeed = async (data) => {
+    try {
+      // Get users that current logged in user follows
+      const interests = await UserService.getUserInterests({ userId: data.userId });
+      let interestsArray = [];
+
+      for (let interest of interests.interests) {
+        interestsArray.push(interest);
+      }
+
+      // Set up pagination
+      const pageNo = parseInt(data.pageNo);
+      const size = parseInt(data.size);
+      let query = {};
+      if (pageNo < 0 || pageNo === 0) {
+        return {
+          error: "Invalid page number",
+        };
+      }
+      query.skip = size * (pageNo - 1);
+      query.limit = size;
+      query.tags = {
+        $in: [...interestsArray],
+      };
+
+      const resources = await _Resource
+        .aggregate([{
+            $lookup: {
+              from: "users",
+              localField: "userId",
+              foreignField: "_id",
+              as: "user",
+            },
+          },
+          {
+            $lookup: {
+              from: "recommends",
+              localField: "_id",
+              foreignField: "resourceId",
+              as: "recommends",
+            },
+          },
+          {
+            $lookup: {
+              from: "collectionresources",
+              localField: "_id",
+              foreignField: "resourceId",
+              as: "collectionresources",
+            },
+          },
+          {
+            $lookup: {
+              from: "comments",
+              localField: "_id",
+              foreignField: "resourceId",
+              as: "comments",
+            },
+          },
+          {
+            $facet: {
+              resources: [{
+                  $sort: {
+                    timestamp: -1,
+                  },
+                },
+                {
+                  $match: {
+                    userId: query.userIds,
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    userId: "$user.userId",
+                    username: "$user.username",
+                    userImage: "$user.smImage.link",
+                    firstName: "$user.firstName",
+                    lastName: "$user.lastName",
+                    url: 1,
+                    title: 1,
+                    type: 1,
+                    tags: 1,
+                    description: 1,
+                    lgImage: 1,
+                    smImage: 1,
+                    deleteHash: 1,
+                    timestamp: 1,
+                    recommended_by_count: 1,
+                    noImage: 1,
+                    backgroundColor: 1,
+                    textColor: 1,
+                    isLikedByUser: {
+                      $filter: {
+                        input: "$recommends",
+                        as: "recs",
+                        cond: {
+                          $eq: ["$$recs.userId", ObjectId(data.userId)],
+                        },
+                      },
+                    },
+                    isInCollection: {
+                      $filter: {
+                        input: "$collectionresources",
+                        as: "crs",
+                        cond: {
+                          $eq: ["$$crs.anchorUserId", ObjectId(data.userId)],
+                        },
+                      },
+                    },
+                    commentsCount: {
+                      $size: ["$comments"]
+                    },
+                  },
+                },
+                {
+                  $skip: query.skip,
+                },
+                {
+                  $limit: query.limit,
+                },
+              ],
+              count: [{
+                  $match: {
+                    userId: query.userIds,
+                  },
+                },
+                {
+                  $group: {
+                    _id: 0,
+                    count: {
+                      $sum: 1
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ])
+        .exec();
+
+      return {
+        resources: resources[0].resources,
+        count: resources[0].count[0].count,
+      };
+    } catch (err) {
+      return {
+        error: err.message,
+      };
+    }
+  }
+
   const getUserFollowers = async (anchorUserId) => {
     try {
-      const following = await Following.find({ anchorUserId })
+      const following = await Following.find({
+          anchorUserId
+        })
         .select("userId")
         .exec();
       if (following) {
@@ -193,8 +348,7 @@ const ResourceGet = (() => {
       query.skip = size * (pageNo - 1);
       query.limit = size;
 
-      const comments = await Comment.aggregate([
-        {
+      const comments = await Comment.aggregate([{
           $lookup: {
             from: "users",
             localField: "userId",
@@ -204,8 +358,7 @@ const ResourceGet = (() => {
         },
         {
           $facet: {
-            comments: [
-              {
+            comments: [{
                 $match: {
                   resourceId: mongoose.Types.ObjectId(data.resourceId),
                 },
@@ -217,7 +370,9 @@ const ResourceGet = (() => {
                   lastName: "$user.lastName",
                   content: 1,
                   timestamp: 1,
-                  image: { $ifNull: ["$user.smImage.link", ""] },
+                  image: {
+                    $ifNull: ["$user.smImage.link", ""]
+                  },
                 },
               },
               {
@@ -232,8 +387,7 @@ const ResourceGet = (() => {
                 },
               },
             ],
-            count: [
-              {
+            count: [{
                 $match: {
                   resourceId: mongoose.Types.ObjectId(data.resourceId),
                 },
@@ -241,7 +395,9 @@ const ResourceGet = (() => {
               {
                 $group: {
                   _id: 0,
-                  count: { $sum: 1 },
+                  count: {
+                    $sum: 1
+                  },
                 },
               },
             ],
@@ -267,8 +423,7 @@ const ResourceGet = (() => {
 
   const getResourceCommentsCount = async (resourceId) => {
     try {
-      const commentCount = await Comment.aggregate([
-        {
+      const commentCount = await Comment.aggregate([{
           $match: {
             resourceId: mongoose.Types.ObjectId(resourceId),
           },
@@ -276,7 +431,9 @@ const ResourceGet = (() => {
         {
           $group: {
             _id: 0,
-            count: { $sum: 1 },
+            count: {
+              $sum: 1
+            },
           },
         },
       ]);
@@ -308,8 +465,7 @@ const ResourceGet = (() => {
       query.limit = size;
 
       const resources = await _Resource
-        .aggregate([
-          {
+        .aggregate([{
             $lookup: {
               from: "users",
               localField: "userId",
@@ -327,8 +483,7 @@ const ResourceGet = (() => {
           },
           {
             $facet: {
-              resources: [
-                {
+              resources: [{
                   $sort: {
                     timestamp: -1,
                   },
@@ -356,8 +511,12 @@ const ResourceGet = (() => {
                     textColor: 1,
                     commentCount: {
                       $cond: {
-                        if: { $isArray: "$comments" },
-                        then: { $size: "$comments" },
+                        if: {
+                          $isArray: "$comments"
+                        },
+                        then: {
+                          $size: "$comments"
+                        },
                         else: "0",
                       },
                     },
@@ -370,8 +529,7 @@ const ResourceGet = (() => {
                   $limit: query.limit,
                 },
               ],
-              count: [
-                {
+              count: [{
                   $match: {
                     userId: ObjectId(data.userId),
                   },
@@ -379,7 +537,9 @@ const ResourceGet = (() => {
                 {
                   $group: {
                     _id: 0,
-                    count: { $sum: 1 },
+                    count: {
+                      $sum: 1
+                    },
                   },
                 },
               ],
@@ -402,9 +562,10 @@ const ResourceGet = (() => {
 
   const getResource = async (data) => {
     try {
-      const resource = await _Resource.aggregate([
-        {
-          $match: { _id: ObjectId(data.resourceId) },
+      const resource = await _Resource.aggregate([{
+          $match: {
+            _id: ObjectId(data.resourceId)
+          },
         },
         {
           $lookup: {
@@ -477,7 +638,9 @@ const ResourceGet = (() => {
                 },
               },
             },
-            commentsCount: { $size: ["$comments"] },
+            commentsCount: {
+              $size: ["$comments"]
+            },
           },
         },
       ]);
@@ -495,9 +658,13 @@ const ResourceGet = (() => {
     try {
       const resources = await _Resource
         .find({
-          _id: { $in: [...getQueries(data)] },
+          _id: {
+            $in: [...getQueries(data)]
+          },
         })
-        .sort({ timestamp: -1 })
+        .sort({
+          timestamp: -1
+        })
         .exec();
 
       let monthsArray = [];
@@ -541,9 +708,13 @@ const ResourceGet = (() => {
     try {
       const resources = await _Resource
         .find({
-          _id: { $in: [...getQueries(data)] },
+          _id: {
+            $in: [...getQueries(data)]
+          },
         })
-        .sort({ timestamp: -1 })
+        .sort({
+          timestamp: -1
+        })
         .exec();
       return {
         resources,
@@ -593,8 +764,12 @@ const ResourceGet = (() => {
 
   const getProfileImageByUsername = async (username) => {
     try {
-      const user = await User.findOne({ username }).select("smImage").exec();
-      return { image: user.smImage.link };
+      const user = await User.findOne({
+        username
+      }).select("smImage").exec();
+      return {
+        image: user.smImage.link
+      };
     } catch (err) {
       return {
         error: err.message,
@@ -629,8 +804,7 @@ const ResourceGet = (() => {
         // * Search for resources with tag
 
         const resources = await _Resource
-          .aggregate([
-            {
+          .aggregate([{
               $lookup: {
                 from: "users",
                 localField: "userId",
@@ -648,14 +822,17 @@ const ResourceGet = (() => {
             },
             {
               $facet: {
-                resources: [
-                  {
+                resources: [{
                     $sort: {
                       timestamp: -1,
                     },
                   },
                   {
-                    $match: { tags: { $in: regex } },
+                    $match: {
+                      tags: {
+                        $in: regex
+                      }
+                    },
                   },
                   {
                     $project: {
@@ -677,8 +854,12 @@ const ResourceGet = (() => {
                       textColor: 1,
                       commentCount: {
                         $cond: {
-                          if: { $isArray: "$comments" },
-                          then: { $size: "$comments" },
+                          if: {
+                            $isArray: "$comments"
+                          },
+                          then: {
+                            $size: "$comments"
+                          },
                           else: "0",
                         },
                       },
@@ -705,8 +886,7 @@ const ResourceGet = (() => {
       }
 
       const resources = await _Resource
-        .aggregate([
-          {
+        .aggregate([{
             $lookup: {
               from: "users",
               localField: "userId",
@@ -724,15 +904,17 @@ const ResourceGet = (() => {
           },
           {
             $facet: {
-              resources: [
-                {
+              resources: [{
                   $sort: {
                     timestamp: -1,
                   },
                 },
                 {
                   $match: {
-                    title: { $regex: `${query}`, $options: "i" },
+                    title: {
+                      $regex: `${query}`,
+                      $options: "i"
+                    },
                   },
                 },
                 {
@@ -755,8 +937,12 @@ const ResourceGet = (() => {
                     textColor: 1,
                     commentCount: {
                       $cond: {
-                        if: { $isArray: "$comments" },
-                        then: { $size: "$comments" },
+                        if: {
+                          $isArray: "$comments"
+                        },
+                        then: {
+                          $size: "$comments"
+                        },
                         else: "0",
                       },
                     },
@@ -790,8 +976,7 @@ const ResourceGet = (() => {
   const searchUserResources = async (data) => {
     try {
       const resources = await _Resource
-        .aggregate([
-          {
+        .aggregate([{
             $lookup: {
               from: "users",
               localField: "userId",
@@ -809,8 +994,7 @@ const ResourceGet = (() => {
           },
           {
             $facet: {
-              resources: [
-                {
+              resources: [{
                   $sort: {
                     timestamp: -1,
                   },
@@ -818,7 +1002,10 @@ const ResourceGet = (() => {
                 {
                   $match: {
                     userId: ObjectId(data.userId),
-                    title: { $regex: `${data.query}`, $options: "i" },
+                    title: {
+                      $regex: `${data.query}`,
+                      $options: "i"
+                    },
                   },
                 },
                 {
@@ -839,8 +1026,12 @@ const ResourceGet = (() => {
                     textColor: 1,
                     commentCount: {
                       $cond: {
-                        if: { $isArray: "$comments" },
-                        then: { $size: "$comments" },
+                        if: {
+                          $isArray: "$comments"
+                        },
+                        then: {
+                          $size: "$comments"
+                        },
                         else: "0",
                       },
                     },
@@ -850,8 +1041,7 @@ const ResourceGet = (() => {
                   $limit: 10,
                 },
               ],
-              count: [
-                {
+              count: [{
                   $match: {
                     userId: ObjectId(data.userId),
                   },
@@ -859,7 +1049,9 @@ const ResourceGet = (() => {
                 {
                   $group: {
                     _id: 0,
-                    count: { $sum: 1 },
+                    count: {
+                      $sum: 1
+                    },
                   },
                 },
               ],
@@ -891,6 +1083,7 @@ const ResourceGet = (() => {
     getProfileImageByUsername,
     searchUserResources,
     searchResources,
+    getExploreFeed
   };
 })();
 
