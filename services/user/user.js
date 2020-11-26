@@ -918,6 +918,36 @@ const Profile = (() => {
     }
   }
 
+  const setUserInterests = async (data) => {
+    try {
+      const _id = data.id;
+      const interests = data.interests || [];
+
+      const query = {
+        _id: _id,
+      };
+      const update = {
+        $set: {
+          interests: interests
+        },
+        safe: {
+          new: true,
+          upsert: true,
+        },
+      };
+
+      const user = await User.updateOne(query, update).exec();
+      return {
+        message: "User details updated",
+      };
+    } catch (err) {
+      console.log(err);
+      return {
+        error: err.message,
+      };
+    }
+  }
+
   return {
     getUserId,
     getUserData,
@@ -937,7 +967,8 @@ const Profile = (() => {
     getUserFollowers,
     globalSearch,
     getFollowersFollowing,
-    getUserInterests
+    getUserInterests,
+    setUserInterests
   };
 })();
 
