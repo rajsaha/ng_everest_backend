@@ -164,10 +164,20 @@ router.post('/add-comment', checkIfAuthenticated, async (req, res, next) => {
     }
 });
 
-// * Search
+// * Search for user resources
 router.post('/search-for-user-resources', checkIfAuthenticated, async (req, res, next) => {
     try {
         const response = await ResourceGet.searchUserResources(req.body);
+        res.status(200).json(response);
+    } catch (err) {
+        console.error(`Error: ${err.message}`);
+    }
+});
+
+// * Search for user resources
+router.post('/search-tags', checkIfAuthenticated, async (req, res, next) => {
+    try {
+        const response = await ResourceGet.searchTags(req.body);
         res.status(200).json(response);
     } catch (err) {
         console.error(`Error: ${err.message}`);

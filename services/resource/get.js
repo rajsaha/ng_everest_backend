@@ -1070,6 +1070,29 @@ const ResourceGet = (() => {
     }
   };
 
+  const searchTags = async (data) => {
+    try {
+      const resources = await _Resource.find({
+          tags: {
+            $regex: `${data.query}`,
+            $options: "i"
+          },
+        })
+        .select("tags")
+        .distinct("tags")
+        .exec();
+
+      return {
+        error: false,
+        resources
+      };
+    } catch (err) {
+      return {
+        error: err.message,
+      };
+    }
+  };
+
   return {
     getAllResources,
     getUserResources,
@@ -1082,7 +1105,8 @@ const ResourceGet = (() => {
     getProfileImageByUsername,
     searchUserResources,
     searchResources,
-    getExploreFeed
+    getExploreFeed,
+    searchTags
   };
 })();
 
