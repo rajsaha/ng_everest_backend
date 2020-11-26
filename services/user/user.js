@@ -241,11 +241,7 @@ const Profile = (() => {
           website: website,
           bio: bio,
           email: email,
-        },
-        $addToSet: {
-          interests: {
-            $each: interests,
-          },
+          interests: interests
         },
         safe: {
           new: true,
