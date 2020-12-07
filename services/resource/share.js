@@ -7,22 +7,27 @@ const Utility = require("../utility/Utility");
 
 const ResourceShare = (() => {
   const getOpenGraphData = async (url) => {
-    const response = await ogs({
-      url: url,
-    });
+    try {
+      const response = await ogs({
+        url: url,
+      });
 
-    if (!response) {
-      return {
-        message: response,
-      };
-    } else {
-      return {
-        message: {
+      if (response) {
+        return {
           error: false,
-          status: 200,
-          data: response,
-        },
-      };
+          data: response.data
+        }
+      }
+
+      return {
+        error: true,
+        message: response
+      }
+    } catch (err) {
+      return {
+        error: true,
+        message: err
+      }
     }
   };
 
