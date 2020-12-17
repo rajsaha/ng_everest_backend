@@ -4,6 +4,7 @@ const ForgotPasswordModel = require("../../models/ForgotPassword");
 const UserModel = require("../../models/User");
 const ObjectId = mongoose.Types.ObjectId;
 const nodemailer = require("nodemailer");
+const dayjs = require('dayjs');
 
 const ForgotPassword = (() => {
     const forgotPasswordStep1 = async (data) => {
@@ -24,6 +25,15 @@ const ForgotPassword = (() => {
                 return {
                     error: true,
                     message: "That email does not seem to exist"
+                }
+            }
+
+            const existingForgetPassword = await existingForgetPassword.findOne({ email: data.email });
+
+            if (existingForgetPassword) {
+                return {
+                    error: false,
+                    message: "Email sent"
                 }
             }
 
@@ -93,6 +103,20 @@ const ForgotPassword = (() => {
         try {
             // * If code works, delete Forgot Password object for that code
             // ! If code doesn't match, return error message to user
+
+            const forgetPassword = await ForgotPasswordModel.findOne({ code: data.code })
+
+            if (forgetPassword) {
+                return {
+                    error: false,
+                    message: "Correct code"
+                }
+            }
+
+            return {
+                error: true,
+                message: "Incorrect code"
+            }
         } catch (err) {
             return {
                 error: err.message,
