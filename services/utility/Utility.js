@@ -86,7 +86,7 @@ const Utility = (() => {
 
       // send mail with defined transport object
       let info = await transporter.sendMail({
-        from: '"Everest" <everest@gmail.com>',
+        from: '"Everest" <rajsaha@tryeverest.app>',
         to: `${data.email}`,
         subject: subject,
         text: text,
