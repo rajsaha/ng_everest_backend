@@ -39,7 +39,7 @@ const EmailTemplate = (() => {
                         <div style='height: 2px; width: 100%; border-radius: 10px; margin: 25px 0; background-color: rgba(0,0,0,0.1);'></div>
                         <p>Hello <b>${data.firstName} ${data.lastName}</b>,</p>
                         <p>You have successfully changed your password</p>
-                        <p>If this was not done by you, please email us at <a href='mailto:everest@everest.com'>everest@everest.com</a></p>
+                        <p>If this was not done by you, please email us at <a href='mailto:rajsaha@tryeverest.app'>rajsaha@tryeverest.app</a></p>
                         <p>Cheers,<br>Everest Team</p>
                     </div>
                 </div>`;
