@@ -8,10 +8,6 @@ var ForgotPasswordSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    messageId: {
-        type: String,
-        required: true
-    },
     valid: {
         type: Boolean,
         required: true,
