@@ -14,6 +14,7 @@ const signUpRoute = require("./api/routes/auth/signup");
 const userRoute = require("./api/routes/user/user");
 const resourceRoute = require("./api/routes/resource/resource");
 const collectionRoute = require("./api/routes/collection/collection");
+const forgotPasswordRoute = require("./api/routes/forgot-password/forgot-password");
 
 // Mongodb connection string
 try {
@@ -80,6 +81,7 @@ app.use("/signup", signUpRoute);
 app.use("/user", userRoute);
 app.use("/resource", resourceRoute);
 app.use("/collection", collectionRoute);
+app.use("/forgot-password", forgotPasswordRoute);
 
 app.use((req, res, next) => {
   const error = new Error("Not found");
