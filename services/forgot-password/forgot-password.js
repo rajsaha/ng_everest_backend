@@ -2,7 +2,6 @@
 const mongoose = require("mongoose");
 const ForgotPasswordModel = require("../../models/ForgotPassword");
 const UserModel = require("../../models/User");
-const ObjectId = mongoose.Types.ObjectId;
 const nodemailer = require("nodemailer");
 const dayjs = require('dayjs');
 
@@ -28,7 +27,12 @@ const ForgotPassword = (() => {
                 }
             }
 
-            const existingForgetPassword = await existingForgetPassword.findOne({ email: data.email });
+            const existingForgetPassword = await ForgotPasswordModel.findOne({
+                email: data.email,
+                valid: true
+            }, {
+                timestamp: -1
+            }).exec();
 
             if (existingForgetPassword) {
                 return {
@@ -37,14 +41,25 @@ const ForgotPassword = (() => {
                 }
             }
 
+            // * Save FP Entity
             const code = Math.floor(100000 + Math.random() * 900000);
+            const forgotPassword = new ForgotPasswordModel({
+                _id: new mongoose.Types.ObjectId(),
+                email: data.email,
+                code: code,
+                messageId: info.messageId,
+                timestamp: dayjs().add(1, 'hour')
+            });
 
+            await forgotPassword.save();
+
+            // * Send email
             const transporter = nodemailer.createTransport({
-                host: 'smtp.ethereal.email',
-                port: 587,
+                host: process.env.EMAIL_HOST,
+                port: process.env.EMAIL_PORT,
                 auth: {
-                    user: 'adrien.hahn@ethereal.email',
-                    pass: 'eEFTfHm7ThHsFDC4ST'
+                    user: process.env.EMAIL_USERNAME,
+                    pass: process.env.EMAIL_PASSWORD
                 }
             });
 
@@ -64,22 +79,13 @@ const ForgotPassword = (() => {
                         <p>Hello <b>${user.firstName} ${user.lastName}</b>,</p>
                         <p>You see to have forgotten your password. Here's the code you requested:</p>
                         <p style='font-size: 25px;'>${code}</p>
-                        <p>Cheers,</p>
-                        <p>Everest Team</p>
+                        <p>This code will be valid for <b>1 hour</b></p>
+                        <p>Cheers,<br>Everest Team</p>
                     </div>
                 </div>`,
             });
 
             console.log("Message sent: %s", info.messageId);
-
-            const forgotPassword = new ForgotPasswordModel({
-                _id: new mongoose.Types.ObjectId(),
-                email: data.email,
-                code: code,
-                messageId: info.messageId,
-            });
-
-            await forgotPassword.save();
 
             if (forgotPassword) {
                 return {
@@ -101,15 +107,29 @@ const ForgotPassword = (() => {
 
     const forgotPasswordStep2 = async (data) => {
         try {
-            // * If code works, delete Forgot Password object for that code
+            // * If code works, update Forgot Password object for that code
             // ! If code doesn't match, return error message to user
 
-            const forgetPassword = await ForgotPasswordModel.findOne({ code: data.code })
+            const forgetPassword = await ForgotPasswordModel.findOne({
+                email: data.email,
+                code: data.code,
+                valid: true
+            });
 
-            if (forgetPassword) {
+            if (forgetPassword && dayjs().isBefore(forgetPassword.timestamp)) {
                 return {
                     error: false,
                     message: "Correct code"
+                }
+            } else if (forgetPassword && dayjs().isAfter(forgetPassword.timestamp)) {
+                await setFPTokenValidity({
+                    code: data.code,
+                    email: data.email,
+                    valid: false
+                });
+                return {
+                    error: true,
+                    message: "Code has expired"
                 }
             }
 
@@ -128,12 +148,78 @@ const ForgotPassword = (() => {
         try {
             // * Change password
             // * Return success message
+            
+            const forgetPassword = await ForgotPasswordModel.findOne({
+                email: data.email,
+                code: data.code,
+                valid: true
+            });
+
+            if (!forgetPassword) {
+                return {
+                    error: true,
+                    message: "What are you doing here? 🤔"
+                }
+            }
+
+            let newPassword = bcryptjs.hashSync(data.password, 10);
+            const update = {
+                $set: {
+                    password: newPassword,
+                },
+                safe: {
+                    new: true,
+                    upsert: true,
+                },
+            };
+
+            // * Set token validitiy to false
+            await setFPTokenValidity({
+                code: data.code,
+                email: data.email,
+                valid: false
+            });
+
+            // * Update password
+            await User.updateOne({
+                email: data.email
+            }, update).exec();
+
+            return {
+                error: false,
+                message: "Password updated",
+            };
         } catch (err) {
             return {
-                error: err.message,
+                error: true,
+                message: err.message
             };
         }
     };
+
+    const setFPTokenValidity = async (data) => {
+        try {
+            const update = {
+                $set: {
+                    valid: data.valid,
+                },
+                safe: {
+                    new: true,
+                    upsert: true,
+                },
+            };
+
+            await ForgotPasswordModel.updateOne({
+                email: data.email,
+                code: data.code,
+            }, update).exec();
+        } catch (err) {
+            return {
+                error: true,
+                message: err.message
+            };
+        }
+    }
 
 
     return {

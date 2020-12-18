@@ -12,6 +12,11 @@ var ForgotPasswordSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    valid: {
+        type: Boolean,
+        required: true,
+        default: true
+    },
     timestamp: {
         type: Date,
         default: Date.now
