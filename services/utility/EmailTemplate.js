@@ -1,13 +1,5 @@
-const TemplateTop = `<div style='background-color: #f4f4f4; padding: 25px;'>
-                        <div style='border-radius: 10px; background-color: white; margin-left: auto; margin-right: auto; max-width: 400px; padding: 25px; -webkit-box-shadow: 0px 5px 25px -9px rgba(0,0,0,0.52); box-shadow: 0px 5px 25px -9px rgba(0,0,0,0.52);'>
-                            <div style='margin-bottom: 15px;'>
-                                <img style='display: block; max-width: 350px;' src='cid:logo1' alt='Everest Logo' title='Logo' width='200px' height='25px'></img>
-                            </div>
-                            <div style='height: 2px; width: 100%; border-radius: 10px; margin: 25px 0; background-color: rgba(0,0,0,0.1);'></div>`;
-                            // ===== Content goes here =====
-const TemplateBottom = `    <p>Cheers,<br>Everest Team</p>
-                        </div>
-                    </div>`;                        
+const TemplateTop = "<div style='background-color: #f4f4f4; padding: 25px;'><div style='border-radius: 10px; background-color: white; margin-left: auto; margin-right: auto; max-width: 400px; padding: 25px; -webkit-box-shadow: 0px 5px 25px -9px rgba(0,0,0,0.52); box-shadow: 0px 5px 25px -9px rgba(0,0,0,0.52);'><div style='margin-bottom: 15px;'><img style='display: block; max-width: 350px;' src='cid:logo1' alt='Everest Logo' title='Logo' width='200px' height='25px'></img></div><div style='height: 2px; width: 100%; border-radius: 10px; margin: 25px 0; background-color: rgba(0,0,0,0.1);'></div>";
+const TemplateBottom = "<p>Cheers,<br>Everest Team</p></div></div>";                        
 
 const EmailTemplate = (() => {
     const getForgetPassword = (data) => {

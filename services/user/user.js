@@ -251,12 +251,14 @@ const Profile = (() => {
 
       const user = await User.updateOne(query, update).exec();
       return {
+        error: false,
         message: "User details updated",
       };
     } catch (err) {
       console.log(err);
       return {
-        error: err.message,
+        error: true,
+        message: err.message
       };
     }
   };
@@ -944,6 +946,24 @@ const Profile = (() => {
     }
   }
 
+  const checkEmail = async (data) => {
+    try {
+      const user = await User.findOne({
+        email: data.email
+      }).select("_id email").exec();
+      return {
+        error: false,
+        data: user
+      };
+    } catch (err) {
+      console.log(err);
+      return {
+        error: true,
+        message: err.message,
+      };
+    }
+  }
+
   return {
     getUserId,
     getUserData,
@@ -964,7 +984,8 @@ const Profile = (() => {
     globalSearch,
     getFollowersFollowing,
     getUserInterests,
-    setUserInterests
+    setUserInterests,
+    checkEmail
   };
 })();
 

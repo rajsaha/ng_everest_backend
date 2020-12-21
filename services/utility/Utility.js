@@ -66,7 +66,7 @@ const Utility = (() => {
         case "acknowledgePasswordChanged":
           template = EmailTemplate.getAcknowledgePasswordChanged(data);
           subject = "Everest - Password successfully changed";
-          text = `Everest - Password successfully changed. If you did not issue a password change request, contact us at everest@everest.com`;
+          text = `Everest - Password successfully changed. If you did not issue a password change request, contact us at rajsaha@tryeverest.app`;
           break;
         default:
           template = EmailTemplate.getForgetPassword(data);
