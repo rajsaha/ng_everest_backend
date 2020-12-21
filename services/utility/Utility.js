@@ -91,6 +91,11 @@ const Utility = (() => {
         subject: subject,
         text: text,
         html: template.data,
+        attachments: [{
+          filename: 'everest-logo.svg',
+          path: 'https://www.tryeverest.app/assets/images/everest-logo.svg',
+          cid: 'logo1'
+        }]
       });
 
       console.log("Message sent: %s", info.messageId);
