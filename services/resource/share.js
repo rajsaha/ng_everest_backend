@@ -15,13 +15,13 @@ const ResourceShare = (() => {
       if (response) {
         return {
           error: false,
-          data: response.data
+          data: response.result
         }
       }
 
       return {
         error: true,
-        message: response
+        message: "Couldn't retrieve open graph data"
       }
     } catch (err) {
       return {
