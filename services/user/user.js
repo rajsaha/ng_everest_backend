@@ -231,6 +231,17 @@ const Profile = (() => {
       const email = data.email || "";
       const interests = data.interests || [];
 
+      const isExisting = await checkEmail({
+        email: data.email
+      });
+      
+      if (isExisting.data && (_id != isExisting.data._id)) {
+        return {
+          error: true,
+          message: "This email can't be used"
+        }
+      }
+
       const query = {
         _id: _id,
       };
